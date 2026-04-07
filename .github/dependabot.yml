@@ -1,6 +1,7 @@
 # Dependabot Configuration
 #
 # Weekly update checks balance responsiveness with notification fatigue.
+# Patch updates auto-merge via dependabot-automerge workflow.
 
 version: 2
 updates:

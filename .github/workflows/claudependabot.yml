@@ -1,0 +1,34 @@
+name: "🤖 ClauDependabot"
+
+on:
+  pull_request:
+    # Path filter avoids creating workflow runs for unrelated PRs while still
+    # catching all Dependabot updates (Go modules and GitHub Actions).
+    paths:
+      - "go.mod"
+      - "go.sum"
+      - ".github/workflows/**"
+
+jobs:
+  review:
+    name: Review
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    permissions:
+      pull-requests: write # Required by: gh pr review --approve
+      id-token: write # Required for Claude to generate GitHub app tokens
+      contents: read # Required by: actions/checkout
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+          compat-lookup: true
+
+      - name: Approve patch
+        if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
+        run: gh pr review --approve -b "Patch update — auto-approved" "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
