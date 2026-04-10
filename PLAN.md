@@ -255,7 +255,10 @@ and scope boundaries from their own understanding.
 
 DO NOT begin Phase 2. We will save this plan in the repository (root is fine, we
 will delete it once it is done) so we can continue in another session. Phase 2
-will pull in another conversation
-(https://claude.ai/share/815a6835-3488-4751-83e3-946ac4528365) for more fine
-details that are relevant to understand the full decisions and analysis taken,
-even refine some needs and workflows.
+will pull in the [original design conversation][conversation.json] (distilled in
+[00-original-conversation.md][conversation.md]) for more fine details that are
+relevant to understand the full decisions and analysis taken, even refine some
+needs and workflows.
+
+[conversation.json]: docs/reference/00-design-conversation.json
+[conversation.md]: docs/reference/00-original-conversation.md
