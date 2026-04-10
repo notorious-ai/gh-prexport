@@ -1,0 +1,524 @@
+{
+  "uuid": "b9077f08-3799-4828-8a70-8266f7f15a1e",
+  "name": "💬 Is there an open source tool t…",
+  "summary": "**Conversation Overview**\n\nThe person, who appears to be an experienced software engineer with strong opinions on code architecture and data modeling, engaged in an extended design session to create a comprehensive specification for a GitHub CLI extension called `gh-prexport`. The tool's purpose is to export a user's pull request review interactions — comments, threads, code snapshots, and diffs — as a structured \"bronze-tier\" dataset (borrowing from the Medallion model) for later use in fine-tuning LLM agents to replicate the user's code review practices and craftsmanship. The project is to be built as a Go-based GitHub CLI extension using the GitHub REST and GraphQL APIs exclusively (no git cloning).\n\nThe conversation moved through several distinct design phases: exploring what data captures a developer's review craft, refining a conceptual schema to model the temporal reality of multi-round code reviews, and then designing a concrete export format. The person made several important corrections throughout — notably that threads don't logically span rounds (a thread belongs to one round, its conversation is timeless), that `round_number` belongs on the thread not on individual comments, and that the schema was over-engineering inference fields that belong in a future analysis layer. The person was explicit that this tool is export-only, with processing and insights deferred to a next-generation tool. They referenced their real-world experience reviewing code with novice developers, including patterns like \"giving in\" (deferring technical challenges), trust-based approvals, and conversations that happen entirely outside GitHub.\n\nThe final agreed design uses a directory tree with a content-addressable blob store, structured as a `single-pr` format for prototyping with a planned `migrate/merge` command to combine exports into `repo-batch` format later. The two primary JSON files per PR are `pr.json` (narrative: metadata, rounds, pushes) and `threads.json` (conversations with precomputed indexes by file, round, and resolution state). Snapshot file manifests, raw unified diff patch files, and content-addressed blobs complete the structure. Data duplication was explicitly accepted. Five reference documents were generated as project artifacts: a design overview, directory structure specification, full schema specification with JSON examples, GitHub API mapping with a GraphQL query shape and rate limiting analysis, and a glossary of key design decisions with rationale.",
+  "model": "claude-opus-4-6",
+  "created_at": "2026-04-03T20:28:45.423401Z",
+  "updated_at": "2026-04-04T09:17:07.477200Z",
+  "project": {
+    "uuid": "019d579e-4bfc-722b-8ce8-b5d1938bce5e",
+    "name": "GitHub Reviews"
+  },
+  "artifacts": [
+    {
+      "file": "01-design-overview.md",
+      "description": "Main design document for the gh-prexport project"
+    },
+    {
+      "file": "02-directory-structure.md",
+      "description": "Directory structure specification"
+    },
+    {
+      "file": "03-schema-specification.md",
+      "description": "Full schema specification for all JSON structures"
+    },
+    {
+      "file": "04-api-mapping.md",
+      "description": "API mapping and implementation notes"
+    },
+    {
+      "file": "05-glossary-and-decisions.md",
+      "description": "Glossary and key design decisions"
+    }
+  ],
+  "chat_messages": [
+    {
+      "sender": "human",
+      "index": 0,
+      "created_at": "2026-04-03T20:28:45.954411Z",
+      "content": [
+        {
+          "type": "text",
+          "text": "Is there an open source tool that scrapes my GitHub account for all my PR comments and reviews and exports it so that I can fine tune LLM agents on it later?"
+        }
+      ]
+    },
+    {
+      "sender": "assistant",
+      "index": 1,
+      "created_at": "2026-04-03T20:29:14.026281Z",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "The user is asking about an open source tool that scrapes GitHub PR comments and reviews for fine-tuning LLM agents. Let me search for this.",
+          "summaries": [
+            {
+              "summary": "Thinking about open source tools for exporting GitHub PR comments and reviews for LLM fine-tuning."
+            }
+          ]
+        },
+        {
+          "type": "thinking",
+          "thinking": "The search results are mostly about LLM-powered PR reviewers, not about scraping your own PR comments/reviews for fine-tuning. Let me search more specifically."
+        },
+        {
+          "type": "thinking",
+          "thinking": "I didn't find a dedicated open source tool that does exactly what the user wants - scraping all their PR comments/reviews across their entire GitHub account for LLM fine-tuning. Let me do one more search to be sure."
+        },
+        {
+          "type": "thinking",
+          "thinking": "I haven't found a dedicated open-source tool that does exactly this. Let me give a direct answer based on what I found.",
+          "summaries": [
+            {
+              "summary": "Searched for dedicated tool, found none available."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "Short answer: I couldn't find an existing open-source tool purpose-built for this exact workflow (scrape all *your* PR comments/reviews across repos → export as a fine-tuning dataset).\n\nWhat does exist in the neighborhood:\n\n**Closest match — Chrome extension:** There's a \"GitHub PR Review Exporter\" Chrome extension that exports PR review comments with file paths, line numbers, and code suggestions, designed for AI-assisted workflows. But it's per-PR, not an account-wide bulk export.\n\n**The building blocks are straightforward though.** The GitHub REST API has dedicated endpoints for exactly the data you need — `GET /repos/{owner}/{repo}/pulls/comments` gives you review comments with the `diff_hunk`, `path`, `body`, and `user` fields. The GraphQL API is even better for bulk extraction since you can pull review threads with resolution status in fewer round-trips.\n\nGiven your tooling preferences, this is probably a ~200-line Go CLI with `gh` as the auth layer. The shape would be:\n\n1. `gh api` to list all repos you've contributed to (or enumerate specific orgs)\n2. For each repo, paginate through `/repos/{owner}/{repo}/pulls/comments` filtered by your user\n3. Also grab `/repos/{owner}/{repo}/pulls/{n}/reviews` for the top-level review bodies\n4. Pair each comment with its `diff_hunk` for context → emit JSONL where each record is `{diff_hunk, file_path, your_comment, review_state}`\n\nThat diff-hunk + comment pairing is the gold for fine-tuning — it's basically `(code_context, review_feedback)` pairs.\n\nWant me to scaffold that CLI for you?",
+          "citations": [
+            {
+              "title": "GitHub PR Review Exporter - Chrome Web Store - Google",
+              "url": "https://chromewebstore.google.com/detail/github-pr-review-exporter/lgfmnclmbgcggmgbikakbgelndlblolg"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sender": "human",
+      "index": 2,
+      "created_at": "2026-04-03T23:11:46.638864Z",
+      "content": [
+        {
+          "type": "text",
+          "text": "Let’s explore this space. What would be the most comprehensive list of information that is useful for later use with LLMs to replicate and learn the user’s code practices, standards, and craftsmanship of the language from pull request interactions?"
+        }
+      ]
+    },
+    {
+      "sender": "assistant",
+      "index": 3,
+      "created_at": "2026-04-03T23:12:31.028221Z",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "The user wants to think through what data to extract from GitHub PR interactions that would be most useful for fine-tuning or few-shot prompting LLMs to replicate their coding style, review practices, and craftsmanship. This is a design/architecture discussion, not a coding task yet. Let me think deeply about this.\n\nLet me think about what signals exist in PR interactions that capture a developer's \"voice\" and practices.",
+          "summaries": [
+            {
+              "summary": "Thinking about extracting code patterns and standards from pull request history for LLM training."
+            },
+            {
+              "summary": "Architecting comprehensive data extraction framework for LLM training."
+            },
+            {
+              "summary": "Examined signals within PR interactions capturing developer voice and practices."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "Great question — let's think about this systematically. A PR interaction is actually a surprisingly rich signal source. There are several distinct \"surfaces\" where your craft shows up, and each carries different information.\n\n**The review comment itself** is the obvious one, but in isolation it's almost useless. The comment \"use a sync.Pool here\" means nothing without knowing what code it's responding to, what the PR was trying to achieve, and whether you were the author or reviewer.\n\nHere's how I'd decompose it:\n\n**1. The code context envelope**\n\nThis is the minimum context needed to make any comment meaningful: the `diff_hunk` (what changed), the `path` (which file), the language (inferred from extension), the line position within the diff, and crucially — the *surrounding* file content, not just the hunk. A 3-line hunk inside a 500-line file about connection pooling tells a very different story than the same hunk in a test file. You'd want the full file at that commit SHA, or at least a generous window (±50 lines).\n\n**2. The role signal**\n\nWhether you were the PR *author* or a *reviewer* completely changes what the LLM should learn from the interaction. As an author, your responses to review comments show how you reason about tradeoffs and defend or accept feedback. As a reviewer, your comments show what you notice, what you care about, and how you communicate technical concerns. These are two different \"skills\" for fine-tuning.\n\n**3. The PR-level metadata (the \"why\")**\n\nThe PR title, body, and labels give intent. A comment about error handling reads differently on a PR labeled `bugfix` vs `feature` vs `refactor`. The branch name often encodes intent too (`fix/race-condition-in-pool`). The list of all files changed gives scope — was this a surgical one-file fix or a cross-cutting refactor? That shapes the kind of review you'd give.\n\n**4. The conversation thread structure**\n\nThis is the most undervalued piece. PR reviews aren't atomic — they're dialogues. A review comment, the author's reply, your follow-up, and eventual resolution form a *reasoning chain*. The thread structure (via `in_reply_to_id`) lets you reconstruct these chains. Whether the thread was ultimately resolved or not is also a signal — it tells you which of your concerns were accepted vs. dropped.\n\n**5. The review verdict**\n\nYour top-level review state (`APPROVED`, `CHANGES_REQUESTED`, `COMMENTED`) paired with the review body is a summary judgment. It captures your threshold — how many issues do you flag before requesting changes vs. approving with comments? This is a style/standards signal.\n\n**6. The commit-level evolution**\n\nIf you can capture the diff *between review rounds* (the force-pushes between your \"changes requested\" and eventual approval), you see what the author actually changed in response to your feedback. This is the ground truth for whether your review comments were actionable and how they translated into code changes.\n\n**7. The temporal and social context**\n\nRepo name, your relationship to the repo (owner, maintainer, external contributor), the other reviewers involved, PR creation and merge timestamps, and the size of the changeset (additions/deletions). You review a 10-line PR from a trusted colleague differently than a 500-line PR from a first-time contributor.\n\n**8. The \"negative space\" — what you didn't comment on**\n\nFiles in the PR that you *didn't* comment on are also signal. If a PR touches 8 files and you only commented on 2, the LLM should learn which patterns you find noteworthy vs. acceptable. This requires capturing the full PR diff alongside your comments.\n\n**Proposed record schema (conceptually):**\n\n```\nPRInteraction {\n  // Identity\n  pr_url, repo, repo_language, your_role (author|reviewer)\n  \n  // PR-level context\n  pr_title, pr_body, labels, branch_name\n  files_changed[], total_additions, total_deletions\n  \n  // The full diff (the \"negative space\")\n  full_pr_diff\n  \n  // Your top-level review\n  review_state, review_body\n  \n  // Per-comment thread\n  threads[] {\n    file_path, language\n    diff_hunk\n    full_file_at_commit (or generous window)\n    conversation[] {\n      author, body, created_at, \n      is_you, in_reply_to\n    }\n    resolved (bool)\n  }\n  \n  // Evolution (if available)\n  post_review_diff  // what changed after your review\n  \n  // Social/temporal\n  other_reviewers[], time_to_merge\n  your_review_latency\n}\n```\n\nThe key insight for fine-tuning is that you'd want to generate *multiple training examples* from a single PR — one for the overall review judgment, one per comment thread as a code-review task, and potentially one for the \"how to respond to this feedback\" direction (from your author-side interactions). The full PR diff serves as the shared context document.\n\nWhat's your sense of scale here — are we talking dozens of repos or would you want to crawl entire GitHub orgs?"
+        }
+      ]
+    },
+    {
+      "sender": "human",
+      "index": 4,
+      "created_at": "2026-04-04T08:02:53.835820Z",
+      "content": [
+        {
+          "type": "text",
+          "text": "This conceptual scheme doesn’t reflect the relevant points in time. My reviews often involves several “rounds”. Each time I’d go on the GitHub UI, place a review with many comments, sometimes even comment without a review (by mistake mostly), and then submit without approval. Then the developers would push, possible several time, and with force, until my next review in the website. Each review and its conversations relate to the code snapshot at that point in time. The last approval review also contains comments, unusual stuff to follow up, minor changes “I trust will be applied without requiring my review again”, and the likes. Recalling my past reviews with novice devs, PRs would conclude with new” giving in”, actually accepting some challenges for a later time."
+        }
+      ]
+    },
+    {
+      "sender": "assistant",
+      "index": 5,
+      "created_at": "2026-04-04T08:03:36.801574Z",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "The user is pointing out that my schema was too flat — it didn't capture the temporal/round-based nature of code reviews. They're describing a very real workflow:\n\n1. Review round 1: Multiple comments submitted as a review (CHANGES_REQUESTED or COMMENT)\n2. Developer pushes (possibly multiple times, possibly force-pushes)\n3. Review round 2: More comments, possibly on new code, possibly continuing old threads\n4. ... repeat ...\n5. Final approval round: With comments that are \"trust-based\" — minor things they trust will be fixed without another review cycle\n6. Sometimes: \"giving in\" — accepting technical debt or deferring challenges\n\n\n7. The code snapshot itself changes between rounds, so a comment from round 1 references commit SHA X while round 2 operates on different code entirely. The conversation threads span across these rounds but point to different versions of the codebase at each stage. This really needs an event-sourced model that tracks the temporal progression, not just a flat structure.",
+          "summaries": [
+            {
+              "summary": "Thinking about modeling code review workflows with multiple rounds and temporal snapshots."
+            },
+            {
+              "summary": "Restructuring schema to capture iterative review rounds."
+            },
+            {
+              "summary": "Reconceived schema to capture iterative review rounds and temporal code snapshots."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "You're right — I flattened something that's fundamentally an event stream. The review process has a temporal spine, and collapsing it loses exactly the information that makes your reviews *yours*: the arc of how you guide code toward acceptability across rounds.\n\nLet me re-think the structure around what actually happens chronologically.\n\n**The real unit isn't \"a review\" — it's a round.**\n\nA round is: a code snapshot (the HEAD at the time you opened the PR in your browser) + the batch of comments you submitted together + your verdict (or lack of one, the accidental \"comment without review\" case you mentioned). Between your rounds, the developer acts — pushes, force-pushes, replies to threads. That developer activity is the *response* to your round, and the next snapshot reflects it.\n\nSo the spine looks like:\n\n```\nPR Timeline {\n  pr_metadata { ... }\n  \n  rounds[] {\n    round_number\n    snapshot_sha          // HEAD when you reviewed\n    snapshot_diff_from_base // full diff at this point in time\n    \n    // What you submitted\n    review_id (nullable)  // null = loose comments, no formal review\n    review_state          // CHANGES_REQUESTED | COMMENTED | APPROVED | null\n    review_body\n    \n    comments[] {\n      file_path\n      diff_hunk_at_this_sha\n      file_content_at_this_sha  // or window\n      body\n      thread_id           // links across rounds\n    }\n    \n    // What happened AFTER this round, before next\n    developer_response {\n      reply_comments[]    // their replies to your threads\n      pushes[] {\n        sha, message, timestamp,\n        force_push (bool)\n      }\n      inter_round_diff    // diff between this snapshot and next round's\n    }\n  }\n}\n```\n\n**Why this ordering matters for fine-tuning:**\n\nEach round is a self-contained decision problem: \"given *this* code snapshot and *this* PR context, what do you comment on, and what's your verdict?\" That's a clean training example. But the *sequence* of rounds captures something deeper — your review *strategy*. Specifically:\n\n**Round 1** tends to be the broadest — architectural concerns, design-level pushback, the \"this approach won't work because...\" comments. These are high-signal for teaching an LLM what you notice first.\n\n**Middle rounds** are where the negotiation happens. You're re-reviewing code that partially addressed your feedback. The `inter_round_diff` is gold here — it shows what the developer actually changed vs. what you asked for. Your new comments in round N+1 implicitly say \"this was addressed satisfactorily\" (for threads you didn't revisit) or \"this still isn't right\" (for threads you continued). The *absence* of a follow-up comment on a thread is as informative as the comment itself.\n\n**The final approval round** is the most nuanced, exactly as you described. It encodes your *acceptance threshold*. The comments in an approval review are qualitatively different — they're trust-based delegation (\"fix this, I won't re-review\"), deferred concerns (\"let's tackle this in a follow-up\"), or even concessions (\"I'd prefer X but I can live with Y\"). An LLM learning your style needs to distinguish these from round-1 blocking comments.\n\n**The \"giving in\" pattern** is particularly interesting. That's a *trajectory* across rounds: strong objection → developer pushback/explanation → softened position → acceptance with conditions. You can only learn that from the thread conversation ordered across rounds. The thread becomes:\n\n```\nthread {\n  thread_id\n  exchanges[] {\n    round_number\n    speaker        // you or developer  \n    body\n    code_at_time   // the diff_hunk shifted between rounds\n    sentiment_arc  // blocking → negotiating → accepting\n  }\n  resolution_type  // addressed | deferred | conceded\n  final_state      // resolved or left open at merge\n}\n```\n\n**One more thing the flat model missed:** the relationship between comments *within* a round. When you submit a review with 8 comments, those comments are not independent — they often build a narrative. Comment 1 might say \"this error handling pattern is inconsistent\" and comment 5 on a different file might say \"same issue here.\" The `review_id` groups them, but the *ordering* and cross-references between your own comments within a single round capture how you build a coherent review.\n\nSo really there are three temporal axes: within a round (your comments as a batch), across rounds (the review arc), and within a thread (a single concern's lifecycle). All three carry different aspects of your craft.\n\nDoes this decomposition match your mental model? And there's a practical question lurking — the `file_content_at_this_sha` per round is the expensive part. Are you thinking of cloning repos and checking out historical SHAs, or staying pure-API?"
+        }
+      ]
+    },
+    {
+      "sender": "human",
+      "index": 6,
+      "created_at": "2026-04-04T08:12:19.540266Z",
+      "content": [
+        {
+          "type": "text",
+          "text": "Pure API for now, this is a GitHub CLI extension, developed with Go. Lets refine the conceptual scheme some more. It captures the general vibes, but I require more specific structure in the files, rounds, comments, threads, etc. \n\nThe focus of this project is on exporting data, no analysis yet. Processing and insights are for the next generation. Exporting is about getting as much data comfortably. I think that for every round we need the full version of every affected file. Potentially with related files that remained h changed. We also need to store convenient diffs, as you’ve already mentioned. Data duplication is fine with me at this point. Also, I did not understand how threads are expressed right now. As a reference signal, consider we’d create a playground to explore and visualise past PRs, based on the exported data alone."
+        }
+      ]
+    },
+    {
+      "sender": "assistant",
+      "index": 7,
+      "created_at": "2026-04-04T08:13:41.681372Z",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "The user wants to refine the conceptual schema for a GitHub CLI extension (Go) that exports PR review data. Key requirements:\n\n1. Pure API (GitHub API via `gh` CLI)\n2. Full file contents at each round's snapshot\n3. Convenient diffs at multiple levels\n4. Clear thread structure\n5. Data duplication is fine\n6. Should be self-contained enough to build a PR replay/visualization tool from the exported data alone\n\nLet me think about this carefully and design a comprehensive schema.\n\nLet me think about threads specifically. In GitHub's model:\n- A review comment is placed on a specific line in a diff\n- Comments can be replies to other comments (via `in_reply_to_id`)\n\n\n- A \"thread\" is a chain of comments on the same location, and GitHub groups these into \"review threads\" accessible via GraphQL\n- Threads have a `isResolved` state and can span multiple review rounds as both reviewer and author reply\n\nFor the schema, I need to structure this around PR-level metadata, rounds representing each review submission, file snapshots with full content and diffs at each stage, and threads that capture conversation chains across those rounds.\n\nA round corresponds to a review submission tied to a specific commit SHA, and between rounds there are new pushes. For files, I need to capture the full content at each round's snapshot, the overall PR diff from base, and the inter-round changes. Threads are anchored to a file position with a lifecycle across rounds, where each comment belongs to a specific round and the thread tracks resolution status.\n\nNow I'm thinking through the top-level structure for this export—I need a timeline of events ordered chronologically (pushes, reviews, comments), full file snapshots keyed by SHA at each review point, and precomputed diffs at multiple granularities...\n\nDesigning the schema... I'm mapping out the specific fields from GitHub's GraphQL API for threads and comments—each thread tracks its location in the code, resolution status, and the chain of comments across review rounds, while individual comments capture metadata like authorship, timing, and whether they're outdated relative to newer commits.\n\nNow I need to think through how to structure the file snapshots and diffs—I'll need the full content at each round's SHA, plus some way to identify related files (though that's ambiguous—same package, directory, or import chain?), and then compute diffs both from the base to each round and between consecutive rounds with per-file breakdowns.\n\nDesigning the schema now...",
+          "summaries": [
+            {
+              "summary": "Thinking about structuring file versioning, diffs, and thread representation for PR data export."
+            },
+            {
+              "summary": "Architecting granular schema for rounds, files, threads, diffs."
+            },
+            {
+              "summary": "Architecting timeline-based schema for comprehensive PR replay visualization."
+            },
+            {
+              "summary": "Architecting thread structures and mapping GitHub API responses."
+            },
+            {
+              "summary": "Architected comprehensive export schema with snapshots, threads, and multi-level diffs."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "Good — \"self-contained enough to replay the PR\" is the right design constraint. Let me work through each entity with specific fields.\n\nThe core tension in the structure is that threads *span* rounds but comments *belong to* rounds. Let me make that explicit.\n\n**Top-level document — one per PR:**\n\n```\nPRExport {\n  // === Identity ===\n  repo_owner          string\n  repo_name           string\n  repo_primary_language string\n  pr_number           int\n  pr_url              string\n  \n  // === PR metadata (immutable once opened) ===\n  pr {\n    title             string\n    body              string   // markdown\n    author            string\n    branch_head       string   // e.g. \"fix/pool-cleanup\"\n    branch_base       string   // e.g. \"main\"\n    base_sha          string   // merge-base commit\n    labels            []string\n    created_at        timestamp\n    merged_at         timestamp (nullable)\n    closed_at         timestamp (nullable)\n    merge_commit_sha  string (nullable)\n    \n    // Scope — what the PR touches overall (at merge/close)\n    final_files_changed  int\n    final_additions      int\n    final_deletions      int\n  }\n\n  // === Participants ===\n  user {\n    login             string\n    role              enum(author | reviewer | both)\n    // \"both\" for cases where you review your own \n    // or co-author and also review\n  }\n  \n  participants[] {\n    login             string\n    role              enum(author | reviewer | commenter)\n    association       string   // OWNER, MEMBER, CONTRIBUTOR, etc.\n  }\n\n  // === Snapshots ===\n  // Keyed by commit SHA. Every SHA referenced anywhere\n  // in the export has an entry here.\n  // This is the \"fact table\" for file contents.\n  snapshots {\n    [sha: string]: Snapshot\n  }\n  \n  // === Rounds ===\n  rounds[]            Round    // ordered chronologically\n  \n  // === Threads ===\n  threads[]           Thread   // one per conversation chain\n  \n  // === Push timeline ===\n  // Everything that happened between rounds,\n  // for replay fidelity\n  pushes[]            Push     // ordered chronologically\n}\n```\n\n**Snapshot — the world at a commit:**\n\n```\nSnapshot {\n  sha                 string\n  timestamp           timestamp  // commit timestamp\n  \n  // Every file that is part of the PR at this point\n  // (i.e., differs from base)\n  files[] {\n    path              string\n    language          string     // inferred from extension\n    status            enum(added | modified | deleted | renamed)\n    previous_path     string (nullable)  // for renames\n    content           string (nullable)  // null if deleted\n    content_encoding  enum(utf8 | base64) // for binary detection\n    size_bytes        int\n  }\n  \n  // Unchanged files that provide context.\n  // Same package/directory as changed files.\n  // e.g. if you changed pool.go, include pool_test.go,\n  // types.go from the same package even if untouched.\n  context_files[] {\n    path              string\n    language          string\n    content           string\n    reason            string  // \"same_package\" | \"same_directory\" | \"imported_by\"\n  }\n  \n  // Precomputed diffs for convenience\n  diff_from_base {\n    raw_patch         string   // unified diff, full PR\n    per_file[] {\n      path            string\n      previous_path   string (nullable)\n      status          enum(added | modified | deleted | renamed)\n      patch           string   // unified diff for this file\n      additions       int\n      deletions       int\n    }\n  }\n  \n  // Diff from the PREVIOUS round's snapshot (null for first round)\n  diff_from_previous_snapshot {\n    previous_sha      string\n    raw_patch         string\n    per_file[]        // same structure as above\n  }\n}\n```\n\n**Round — one review session:**\n\n```\nRound {\n  round_number        int       // 1-indexed, chronological\n  snapshot_sha        string    // -> snapshots[sha]\n  submitted_at        timestamp\n  \n  // The formal review, if one was submitted\n  review {                      // nullable — null for loose comments\n    review_id         string\n    state             enum(APPROVED | CHANGES_REQUESTED | COMMENTED | DISMISSED)\n    body              string    // the top-level review message\n  }\n  \n  // All comments you placed in this round,\n  // in the order they appear in the diff (file order, then position)\n  comments[]          CommentRef {\n    thread_id         string    // -> threads[].thread_id\n    comment_id        string    // unique comment id\n  }\n  \n  // What happened AFTER this round, before the next\n  // (null for the last round)\n  gap_to_next {\n    duration          duration  // wall time to next round\n    pushes            []string  // -> pushes[].sha, ordered\n    developer_replies []CommentInThread  // replies to your comments\n                                        // before your next round\n  }\n}\n```\n\n**Thread — a conversation anchored to a code location:**\n\nThis is the key structural decision. A thread is the *full lifecycle* of a single concern, spanning rounds.\n\n```\nThread {\n  thread_id           string\n  \n  // Where this thread is anchored\n  anchor {\n    path              string\n    start_line        int (nullable)  // for multi-line comments\n    end_line          int\n    side              enum(LEFT | RIGHT)  // old vs new in diff\n    original_sha      string   // the SHA when thread was created\n  }\n  \n  // The diff hunk AT THE TIME the thread was started\n  // (this is what you were looking at when you wrote\n  // the first comment)\n  original_diff_hunk  string\n  \n  // Resolution\n  is_resolved         bool\n  resolved_by         string (nullable)  // login\n  resolution_type     enum(              // inferred, not from API\n    addressed          // code was changed to match feedback\n    | deferred         // explicitly punted (\"follow-up PR\")\n    | conceded         // reviewer accepted author's approach\n    | abandoned        // thread went stale, PR merged anyway\n    | null             // can't determine\n  )\n  \n  // Whether the code location has gone stale\n  // (code changed under this thread)\n  is_outdated         bool\n  \n  // The full conversation, chronologically\n  exchanges[] {\n    comment_id        string\n    round_number      int (nullable)  // which of YOUR rounds \n                                      // this belongs to.\n                                      // null for other people's\n                                      // standalone replies\n    author            string\n    is_you            bool\n    body              string          // markdown\n    created_at        timestamp\n    \n    // The diff hunk as it appeared at THIS comment's time\n    // (may differ from original_diff_hunk if code was\n    // pushed between comments)\n    diff_hunk_at_time string\n    commit_sha        string          // what SHA this comment\n                                      // was placed against\n    \n    // Was this comment outdated by the time the PR merged?\n    is_outdated       bool\n    \n    // Reactions (lightweight signal)\n    reactions {\n      thumbs_up       int\n      thumbs_down     int\n      laugh           int\n      // etc.\n    }\n  }\n}\n```\n\n**Push — a commit event between rounds:**\n\n```\nPush {\n  sha                 string\n  parent_sha          string\n  message             string\n  author              string\n  timestamp           timestamp\n  is_force_push       bool     // detected by parent chain break\n  \n  // Which round this push falls after\n  after_round         int (nullable)  // null if before first review\n}\n```\n\n**A few design notes:**\n\nThe `snapshots` map is intentionally denormalized. The same file content might appear in multiple snapshots unchanged — that's fine. It means any consumer can grab a snapshot SHA and get the complete picture without cross-referencing. For a visualization tool, being able to say \"show me the world at round 3\" with a single key lookup is worth the storage.\n\nThe `resolution_type` on threads is the one field that requires inference rather than raw API data. I'd suggest exporting it as `null` in v1 and letting the analysis layer fill it in later — unless you want to apply simple heuristics during export (like: if the thread's anchor file was modified in the inter-round diff and the thread was resolved, call it `addressed`).\n\nThe `context_files` in snapshots is the most expensive part API-wise. For Go repos, \"same package\" is a natural boundary — all `.go` files in the same directory. Worth scoping this carefully to avoid blowing up API rate limits on large repos.\n\nDoes this structure feel right for replay fidelity? The main thing I'm unsure about is whether you'd want the snapshot files stored inline in the JSON or as separate files on disk with the JSON holding paths."
+        }
+      ]
+    },
+    {
+      "sender": "human",
+      "index": 8,
+      "created_at": "2026-04-04T08:24:41.324739Z",
+      "content": [
+        {
+          "type": "text",
+          "text": "That’s more comprehensive now. I still think you put too much into threads, people crap all over them. Some people just resolve and forget to fix, others wait for the reviewer to maintain the conversation, ignoring it on GitHub altogether. Sometimes there are still important exchanges there, though most are verbal taking place out of GitHub. We shall complete this sharp edge then advance to actual export format."
+        }
+      ]
+    },
+    {
+      "sender": "assistant",
+      "index": 9,
+      "created_at": "2026-04-04T08:25:01.016803Z",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "The user is making an important point about threads — I'm over-engineering the thread structure by trying to infer semantics (resolution_type, etc.) from data that's inherently noisy and incomplete. People use threads inconsistently, and much of the real conversation happens outside GitHub (Slack, verbal, etc.).\n\nThe right approach for an export tool is: capture the raw thread data faithfully, don't try to infer meaning. The resolution_type field I proposed is exactly the kind of analysis that belongs in the \"next generation\" processing layer, not the export.\n\nLet me simplify threads to be faithful recordings of what GitHub actually has, without trying to assign meaning. Then we need to figure out the export format — the user said \"actual export format\" so they want to talk about file layout, serialization format, etc.\n \nThey're asking me to fix the thread model first before moving on to the export format itself.",
+          "summaries": [
+            {
+              "summary": "Thinking about balancing GitHub thread documentation with practical communication realities."
+            },
+            {
+              "summary": "Acknowledging thread unreliability, pivoting toward export format."
+            },
+            {
+              "summary": "Recognized over-engineering threads; pivoted toward faithful data capture instead."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "You're right — I was projecting intent onto threads that the data simply doesn't support. The `resolution_type` inference, the `resolved_by` semantics — that's all storytelling on top of messy reality. The export should capture exactly what GitHub knows, nothing more.\n\nA thread is really just: an anchor point in code, and a list of comments that GitHub grouped together. That's it.\n\n```\nThread {\n  thread_id           string\n  \n  // Where GitHub anchored this conversation\n  anchor {\n    path              string\n    line              int (nullable)\n    start_line        int (nullable)  // multi-line range\n    side              enum(LEFT | RIGHT)\n    original_commit   string\n  }\n  \n  // The diff hunk when the first comment was placed\n  original_diff_hunk  string\n  \n  // What GitHub says about resolution — just the raw state\n  is_resolved         bool\n  is_outdated         bool\n  \n  // The comments, in order. That's all we know.\n  comments[] {\n    comment_id        string\n    author            string\n    is_target_user    bool\n    body              string\n    created_at        timestamp\n    updated_at        timestamp (nullable)\n    commit_sha        string\n    diff_hunk_at_time string\n    is_outdated       bool\n    in_reply_to_id    string (nullable)\n    reactions         map[string]int  // emoji -> count\n    \n    // Which round this comment was part of,\n    // if it belongs to the target user.\n    // null for other people's comments\n    // and for target user's non-review comments\n    // that weren't part of a formal review submission\n    round_number      int (nullable)\n  }\n}\n```\n\nThe `round_number` linkage is the one piece of cross-referencing worth keeping — it lets you understand \"this comment was part of that batch\" without inference. Everything else is just what GitHub returns.\n\nThe `resolution_type` enum I had before — `addressed`, `deferred`, `conceded`, `abandoned` — that belongs entirely in the analysis layer. The export just says `is_resolved: true` and lets a future tool figure out why.\n\nDoes this feel right for threads? If so, let's talk export format."
+        }
+      ]
+    },
+    {
+      "sender": "human",
+      "index": 10,
+      "created_at": "2026-04-04T08:27:34.179824Z",
+      "content": [
+        {
+          "type": "text",
+          "text": "It’s ok to keep placeholders for some insights, like that resolution type. Also, round is importantly but I think per thread rather than per comment."
+        }
+      ]
+    },
+    {
+      "sender": "assistant",
+      "index": 11,
+      "created_at": "2026-04-04T08:27:49.282727Z",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "The user wants two things:\n\n1. Keep the `resolution_type` as a placeholder field (nullable, for future analysis to fill in)\n2. Move `round_number` from the comment level to the thread level\n\nThe second point makes sense — a thread is typically initiated in a specific round. The comments within it from other people are responses, and follow-up comments from the target user in later rounds are continuations. But the *thread itself* was born in a round. That's the primary association.\n\nWait, but a thread can span multiple rounds. The user's first comment starts it in round 1, then they might add another comment in round 3. \n\nSo `round_number` at the thread level would capture when the thread originated, not when every comment in it was made. That's the key insight — the thread's round tells you when this concern first surfaced in the review process, and individual comment timing can be inferred from timestamps if needed.",
+          "summaries": [
+            {
+              "summary": "Thinking about balancing placeholder retention with per-thread resolution tracking."
+            },
+            {
+              "summary": "Restructuring round_number from comment to thread level."
+            },
+            {
+              "summary": "Reconciled placeholder fields and restructured round attribution hierarchically."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "Good call. The thread was *born* in a round — that's the meaningful association. Individual comments within it are just the conversation unfolding.\n\n```\nThread {\n  thread_id           string\n  \n  // Which review round initiated this thread\n  round_number        int (nullable)  // null if comment wasn't \n                                       // part of a formal round\n                                       // (loose comment, or \n                                       // comment by someone else)\n  \n  anchor {\n    path              string\n    line              int (nullable)\n    start_line        int (nullable)\n    side              enum(LEFT | RIGHT)\n    original_commit   string\n  }\n  \n  original_diff_hunk  string\n  \n  // Raw GitHub state\n  is_resolved         bool\n  is_outdated         bool\n  \n  // Placeholder — null at export time,\n  // filled by analysis tooling later\n  resolution_type     enum(...) (nullable)\n  \n  comments[] {\n    comment_id        string\n    author            string\n    is_target_user    bool\n    body              string\n    created_at        timestamp\n    updated_at        timestamp (nullable)\n    commit_sha        string\n    diff_hunk_at_time string\n    is_outdated       bool\n    in_reply_to_id    string (nullable)\n    reactions         map[string]int\n  }\n}\n```\n\nCleaner. The thread knows its round, the comments are just the raw conversation. Ready for export format?"
+        }
+      ]
+    },
+    {
+      "sender": "human",
+      "index": 12,
+      "created_at": "2026-04-04T08:28:15.679244Z",
+      "content": [
+        {
+          "type": "text",
+          "text": "Yes. What format do you suggest?"
+        }
+      ]
+    },
+    {
+      "sender": "assistant",
+      "index": 13,
+      "created_at": "2026-04-04T08:29:00.139300Z",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "The user wants to discuss export format for this GitHub PR review data. Let me think about the practical considerations:\n\n1. This is a Go CLI (gh extension)\n2. The data is hierarchical (PR -> rounds, threads, snapshots)\n3. File contents can be large\n4. They want a \"playground to explore and visualize\" later\n5. Data duplication is acceptable\n6. Pure API, no git clone\n\nOptions to consider:\n\n- Single JSON file per PR — simple but gets huge with file contents\n- Directory structure with separate files — good for large content, browsable\n- SQLite — great for querying, single file\n\n\n- JSONL — good for streaming, but the data is hierarchical not flat\n- Tar/archive — good for bundling\n\nThe core tension is that snapshots contain full file contents which can be massive, making it awkward to mix large blobs with structured metadata in a single JSON. But since the user said data duplication is fine, I'm leaning toward either a directory structure with a main JSON for metadata and separate files for contents, or just a single large JSON per PR that's self-contained and easy to load into a visualization tool later.\n\nFor the visualization use case, a web-based tool would need to load a PR and navigate through rounds and threads, so a single JSON per PR is simplest to serve and consume—the file bloat doesn't matter much for local use. A content-addressable approach using git blob SHAs for file contents is elegant since snapshots naturally share unchanged files, giving us deduplication without extra complexity. I'm weighing a straightforward single JSON per PR against a directory structure with separate content storage keyed by SHA.\n\nThe hybrid approach mirrors git's own design—structured metadata as JSON per PR, file contents in a shared content-addressable store, and a manifest to tie it together—which would feel intuitive to users. This balances simplicity with scalability better than either extreme.",
+          "summaries": [
+            {
+              "summary": "Thinking about clarifying the context of a previous format discussion."
+            },
+            {
+              "summary": "Weighing export format options for hierarchical PR data."
+            },
+            {
+              "summary": "Weighing tradeoffs between simplicity and deduplication strategies."
+            },
+            {
+              "summary": "Weighed export format tradeoffs for hierarchical data visualization."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "A few options worth weighing:\n\n**Single JSON per PR, everything inline** — Dead simple. One file, fully self-contained, load it in a visualizer and you have everything. But snapshots with full file contents make these files massive, and the same unchanged file appears verbatim in every snapshot.\n\n**SQLite per export run** — Great for querying across PRs (\"show me all threads where I used the word 'race condition'\"). Single file. But it's opaque to browse, needs tooling to inspect, and the relational model fights the hierarchical shape of the data.\n\n**Directory tree with content-addressable blob store** — This is what I'd lean toward. It mirrors how git itself works, which feels natural for this domain.\n\nThe idea:\n\n```\nexport/\n├── manifest.json              # index of all exported PRs\n├── blobs/\n│   ├── ab/ab3f7c...           # file contents keyed by git blob SHA\n│   ├── cd/cde891...           # natural dedup — same file across\n│   └── ...                    #   snapshots stored once\n└── prs/\n    └── {owner}/{repo}/{number}/\n        └── pr.json            # full PR document, file contents\n                               #   replaced with blob references\n```\n\nThe `pr.json` has the exact structure we've been designing, but `Snapshot.files[].content` becomes a blob SHA reference instead of inline content:\n\n```\n// In snapshot files\n{\n  \"path\": \"pool/conn.go\",\n  \"language\": \"go\",\n  \"status\": \"modified\",\n  \"blob_sha\": \"ab3f7c...\",    // -> blobs/ab/ab3f7c...\n  \"size_bytes\": 4821\n}\n```\n\n**Why this works well:**\n\nThe deduplication is huge in practice. If a PR has 5 rounds and touches 3 files out of a 20-file package, and you're storing the full package as context — that's 20 files × 5 snapshots = 100 file copies, but probably only ~25 unique blobs. Git already computes these SHAs for you, so the API gives them to you for free.\n\nThe `pr.json` stays small and readable — it's pure structure, threads, rounds, diffs, metadata. You can inspect it with `jq`, load it in a browser, grep across PRs. The blobs are there when you need to reconstruct a full snapshot but they don't clutter the narrative data.\n\nFor the visualization playground, loading a PR means: fetch `pr.json`, then lazily resolve blob SHAs when the user clicks into a file at a specific round. You don't need to load 100 file contents upfront.\n\n**The manifest** is a lightweight index for cross-PR queries without parsing every `pr.json`:\n\n```\nmanifest.json {\n  exported_at        timestamp\n  target_user        string\n  prs[] {\n    owner            string\n    repo             string\n    number           int\n    title            string\n    role             enum(author | reviewer | both)\n    rounds_count     int\n    threads_count    int\n    created_at       timestamp\n    merged_at        timestamp (nullable)\n    languages        []string\n    path             string   // relative path to pr.json\n  }\n}\n```\n\nThe diffs (`raw_patch`, per-file `patch`) stay inline in `pr.json` since they're text, relatively compact, and integral to understanding the review. No point externalizing those.\n\nOne open question: do you want the blob store shared across all PRs in an export (maximum dedup — same library file across repos stored once), or scoped per repo?"
+        }
+      ]
+    },
+    {
+      "sender": "human",
+      "index": 14,
+      "created_at": "2026-04-04T08:41:25.506619Z",
+      "content": [
+        {
+          "type": "text",
+          "text": "I agree with Directory tree with content-addressable blob store. This is the “bronze tier” data (borrowed from the Medallion model of OLAP).\n\nTo your open question, I would scope every top-level dir per repo, going beyond that is most complex. Put a versioning file to support evolution. I’m thinking even starting out with a single independent dir per PR, just to prototype, so that next versions can group by repo/batch, and by any other batch later on. Side note, I’d probably have a command to migrate - merge several single PRs together into a single archive. \n\nAlso, there’s no need to necessarily create huge json files, at least consider splitting into files or explain why it’s bad practice otherwise. I worry about large diffs and PRs affecting hundreds of files sometimes."
+        }
+      ]
+    },
+    {
+      "sender": "assistant",
+      "index": 15,
+      "created_at": "2026-04-04T08:42:05.958017Z",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "The user wants to refine the export format with several key decisions:\n\n1. Scope per-repo for blob store\n2. Version file for schema evolution\n3. Start with single independent dir per PR for prototyping\n4. Future migration/merge command\n5. Split large JSON files rather than one massive pr.json\n\nLet me think about the splitting question carefully. For a PR with hundreds of files and large diffs, a single pr.json could get unwieldy. Splitting makes sense along natural seams.\n\nThe natural splits:\n- PR metadata + rounds + threads (the \"narrative\") — this is the structural backbone, stays small\n- Snapshots — these can be large, one file per snapshot\n\n\n- Diffs — also potentially large, could nest per-snapshot or keep separate\n\nNow I'm sketching out a directory structure that keeps everything self-contained per PR during prototyping, includes a version file for schema changes, splits cleanly along those natural boundaries, and still allows for future consolidation into repo-level archives.",
+          "summaries": [
+            {
+              "summary": "Thinking about designing a versioned, modular data storage architecture with per-PR scoping and migration capabilities."
+            },
+            {
+              "summary": "Weighing tradeoffs between monolithic and fragmented JSON architectures."
+            },
+            {
+              "summary": "Architected modular export structure balancing prototyping simplicity with future scalability."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "Splitting is the right instinct. The natural seam lines are clear — the narrative structure (rounds, threads, metadata) is always small, while snapshots and diffs scale with PR size. No reason to force them into one file.\n\n```\npr-export/\n├── version.json                    # schema version, migration support\n│\n└── prs/\n    └── {owner}/{repo}/{number}/\n        ├── pr.json                 # metadata, participants, pushes\n        ├── rounds.json             # review rounds\n        ├── threads.json            # all conversation threads\n        ├── snapshots/\n        │   ├── {sha1}.json         # file manifest + context files list\n        │   ├── {sha2}.json         #   (blob refs, not content)\n        │   └── ...\n        ├── diffs/\n        │   ├── base_{sha1}.patch   # diff from base for each snapshot\n        │   ├── {sha1}_{sha2}.patch # inter-round diffs\n        │   └── ...\n        └── blobs/\n            ├── ab/ab3f7c...        # content-addressed file contents\n            └── ...\n```\n\n**Why these specific splits:**\n\n`pr.json` is the entry point. Small, always fits in memory, gives you everything you need to decide whether to load more:\n\n```json\n{\n  \"schema_version\": \"0.1.0\",\n  \"export_metadata\": {\n    \"exported_at\": \"...\",\n    \"exported_by\": \"gh-prexport\",\n    \"target_user\": \"yourusername\"\n  },\n  \"repo\": {\n    \"owner\": \"...\",\n    \"name\": \"...\",\n    \"primary_language\": \"go\"\n  },\n  \"pr\": {\n    \"number\": 142,\n    \"url\": \"...\",\n    \"title\": \"...\",\n    \"body\": \"...\",\n    \"author\": \"...\",\n    \"branch_head\": \"fix/pool-cleanup\",\n    \"branch_base\": \"main\",\n    \"base_sha\": \"...\",\n    \"labels\": [],\n    \"created_at\": \"...\",\n    \"merged_at\": \"...\",\n    \"closed_at\": null,\n    \"merge_commit_sha\": \"...\",\n    \"final_files_changed\": 12,\n    \"final_additions\": 340,\n    \"final_deletions\": 87\n  },\n  \"target_user\": {\n    \"login\": \"...\",\n    \"role\": \"reviewer\"\n  },\n  \"participants\": [ ... ],\n  \"pushes\": [ ... ]\n}\n```\n\n`rounds.json` is an array of rounds — references snapshot SHAs and thread IDs but contains no file content or diffs:\n\n```json\n{\n  \"rounds\": [\n    {\n      \"round_number\": 1,\n      \"snapshot_sha\": \"abc123...\",\n      \"submitted_at\": \"...\",\n      \"review\": {\n        \"review_id\": \"...\",\n        \"state\": \"CHANGES_REQUESTED\",\n        \"body\": \"Couple of things...\"\n      },\n      \"thread_ids\": [\"t1\", \"t2\", \"t5\"],\n      \"gap_to_next\": {\n        \"duration_seconds\": 86400,\n        \"push_shas\": [\"def456...\"],\n        \"developer_reply_count\": 3\n      }\n    }\n  ]\n}\n```\n\n`threads.json` is the full conversation data — the biggest variable-size piece after diffs, but still text-only, no file contents:\n\n```json\n{\n  \"threads\": [\n    {\n      \"thread_id\": \"t1\",\n      \"round_number\": 1,\n      \"anchor\": {\n        \"path\": \"pool/conn.go\",\n        \"line\": 47,\n        \"start_line\": 45,\n        \"side\": \"RIGHT\",\n        \"original_commit\": \"abc123...\"\n      },\n      \"original_diff_hunk\": \"@@ -42,8 +42,12 @@ ...\",\n      \"is_resolved\": true,\n      \"is_outdated\": false,\n      \"resolution_type\": null,\n      \"comments\": [\n        {\n          \"comment_id\": \"c1\",\n          \"author\": \"yourusername\",\n          \"is_target_user\": true,\n          \"body\": \"This leaks if Dial fails...\",\n          \"created_at\": \"...\",\n          \"updated_at\": null,\n          \"commit_sha\": \"abc123...\",\n          \"diff_hunk_at_time\": \"@@ -42,8 +42,12 @@ ...\",\n          \"is_outdated\": false,\n          \"in_reply_to_id\": null,\n          \"reactions\": {}\n        },\n        {\n          \"comment_id\": \"c2\",\n          \"author\": \"junior-dev\",\n          \"is_target_user\": false,\n          \"body\": \"Good catch, fixed in def456\",\n          \"created_at\": \"...\",\n          \"commit_sha\": \"abc123...\",\n          \"diff_hunk_at_time\": \"@@ -42,8 +42,12 @@ ...\",\n          \"is_outdated\": false,\n          \"in_reply_to_id\": \"c1\",\n          \"reactions\": {\"thumbs_up\": 1}\n        }\n      ]\n    }\n  ]\n}\n```\n\n**Snapshot files** — one per SHA, just the manifest:\n\n```json\n// snapshots/abc123.json\n{\n  \"sha\": \"abc123...\",\n  \"timestamp\": \"...\",\n  \"files\": [\n    {\n      \"path\": \"pool/conn.go\",\n      \"language\": \"go\",\n      \"status\": \"modified\",\n      \"previous_path\": null,\n      \"blob_sha\": \"ab3f7c...\",\n      \"size_bytes\": 4821\n    }\n  ],\n  \"context_files\": [\n    {\n      \"path\": \"pool/pool.go\",\n      \"language\": \"go\",\n      \"blob_sha\": \"ee91b2...\",\n      \"reason\": \"same_package\"\n    }\n  ]\n}\n```\n\n**Diffs as plain patch files** — not JSON, just raw unified diff. They're already a well-understood format, tools can render them natively, and they compress well. The naming convention encodes the relationship: `base_{sha}.patch` for full-PR diff, `{from}_{to}.patch` for inter-round.\n\n**Version file** at the root:\n\n```json\n{\n  \"schema_version\": \"0.1.0\",\n  \"min_compatible_version\": \"0.1.0\",\n  \"format\": \"single-pr\",\n  \"migrations\": []\n}\n```\n\nThe `format` field is what enables the merge command later. A tool sees `\"format\": \"single-pr\"` and knows it's standalone. After merging, the output would be `\"format\": \"repo-batch\"` with a shared blob store and a manifest index. The merge is essentially: combine blob directories (dedup by name), combine PR directories, rewrite `version.json`.\n\nOne thing I like about the diffs as separate `.patch` files — for truly massive PRs (hundreds of files), those are the large artifacts, and they stay out of JSON entirely. The JSON files stay navigable. A 500-file PR might produce a 2MB patch file, but `rounds.json` is still under 50KB.\n\nShould we move to implementation? The first question would be the API call sequence — which GitHub API endpoints map to which parts of this structure."
+        }
+      ]
+    },
+    {
+      "sender": "human",
+      "index": 16,
+      "created_at": "2026-04-04T09:02:21.697557Z",
+      "content": [
+        {
+          "type": "text",
+          "text": "The split is much better! And it helps that we maintain bidirectional reference across files. I wonder if there’s value in keeping all threads as a single file, and all rounds too. Consider both merging into existing/new files and splitting into others."
+        }
+      ]
+    },
+    {
+      "sender": "assistant",
+      "index": 17,
+      "created_at": "2026-04-04T09:03:12.710226Z",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "The user is questioning whether threads and rounds should remain as single files or be split further. Let me think about this...\n\n**Rounds:** There are typically few rounds per PR (2-10 usually). The data per round is small — just references. Keeping rounds.json as a single file makes sense. Even for a long-lived PR with 15 rounds, this file stays tiny.\n\n**Threads:** This is where it gets interesting. A PR could have 2 threads or 200 threads. Each thread has a variable number of comments. For a big review, threads.json could get large. But splitting into one file per thread creates a lot of small files and makes it harder to see the whole review picture at once.\n \nNow I'm thinking about how these files would actually be used. For visualization or analysis, I'd typically want to load all threads together to see the full context of a review, and a single file with maybe 500KB-1MB of text is still manageable even for large PRs. The real question is whether it makes more sense to keep rounds and threads separate or consolidate them — maybe merging rounds into a main pr.json since they're always small, while deciding whether threads should stay as one file or get split out. Merging rounds into pr.json makes sense since they're always small and loaded together, while keeping threads as a single file works for most cases—though splitting threads by file path would enable lazy loading during visualization, which mirrors the snapshot structure nicely. actually review — file by file.\n\nBut then a thread that involves a rename or a moved function... which file does it belong to? The anchor path is clear, so it's fine.\n\nHmm, but for the prototype/MVP, I think keeping threads in one file is simpler. The user said \"consider both\" so I should present the tradeoffs honestly.\n\nLet me also think about what ELSE could be split or merged:\n- Push timeline could merge into pr.json (it's small)\n- Or pushes could merge into rounds (they're already referenced in gap_to_next)\n\nI think the cleanest answer is:\n- Merge rounds + pushes into pr.json → one \"narrative\" file\n- Keep threads as single file, but acknowledge file-based splitting as a future option\n- Maybe suggest threads could split by file path if needed\n\nActually, re-reading the user's question more carefully, they're asking me to evaluate both merging and splitting for both rounds and threads. For rounds, merging into pr.json makes sense since they're small and always loaded together with PR metadata. For threads, it's trickier — keeping them in one file is simpler and easier to grep, but splitting by file path could help with lazy loading on large PRs. I could also nest them under a per-file structure, but that feels over-engineered for now. My recommendation: merge rounds into pr.json since they're metadata-scale, and keep threads as a single file for the MVP while noting that file-based splitting is a viable future option.",
+          "summaries": [
+            {
+              "summary": "Thinking about optimizing file organization by evaluating consolidation versus separation strategies."
+            },
+            {
+              "summary": "Weighing merits of consolidating threads and rounds files."
+            },
+            {
+              "summary": "Weighing merge versus split strategies for threads and rounds."
+            },
+            {
+              "summary": "Weighing merging rounds into pr.json versus splitting threads strategically."
+            },
+            {
+              "summary": "Weighed merging rounds into metadata against splitting threads by file path."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "Good question. Let me evaluate each direction for both.\n\n**Rounds → merge into `pr.json`**\n\nRounds are always small. Even an extreme PR with 15 rounds is maybe 30 lines of JSON per round. They're always co-loaded with PR metadata — you never want rounds without knowing the PR context, and you rarely want PR context without the round timeline. The current split creates cross-file references (rounds.json points to thread IDs, pr.json has pushes that rounds reference) that would be simpler inline. I'd merge rounds and pushes into `pr.json`, making it the single narrative file — everything about *what happened* in this PR, without any file contents or conversation bodies.\n\n**Threads — the harder question**\n\nSplitting per-round doesn't work because a thread *belongs to* a round but its comments *span* rounds. You'd either duplicate or fragment.\n\nSplitting per-file-path is the natural seam. It matches how you actually review (file by file), and for a visualization tool the access pattern is \"user clicked into `pool/conn.go` → load its threads.\" A 200-thread PR spread across 40 files becomes 40 manageable files instead of one large one.\n\nBut for a 3-thread PR, 3 separate files is just noise.\n\nI think the pragmatic answer is: **keep a single `threads.json` for now, but structure it so splitting is trivial later.** Meaning the top-level key is the file path:\n\n```json\n{\n  \"threads_by_file\": {\n    \"pool/conn.go\": [\n      { \"thread_id\": \"t1\", ... },\n      { \"thread_id\": \"t2\", ... }\n    ],\n    \"pool/pool.go\": [\n      { \"thread_id\": \"t5\", ... }\n    ]\n  }\n}\n```\n\nThis way a future version can split into `threads/pool/conn.go.json` mechanically — just lift each key into its own file. The schema evolution is trivial, and the version file tracks which layout is in use.\n\n**Revised structure:**\n\n```\n{owner}/{repo}/{number}/\n├── pr.json                     # metadata + rounds + pushes\n│                               #   (the narrative)\n├── threads.json                # all threads, keyed by file path\n├── snapshots/\n│   └── {sha}.json              # file manifests\n├── diffs/\n│   ├── base_{sha}.patch\n│   └── {sha1}_{sha2}.patch\n└── blobs/\n    └── ab/ab3f7c...\n```\n\nTwo JSON files to load for the full story, blobs loaded lazily. The `pr.json` tells you the shape and timeline, `threads.json` tells you the conversations, everything else is supporting evidence you pull on demand.\n\nShall we move to the API mapping?"
+        }
+      ]
+    },
+    {
+      "sender": "human",
+      "index": 18,
+      "created_at": "2026-04-04T09:09:21.248723Z",
+      "content": [
+        {
+          "type": "text",
+          "text": "That’s really great! Just to clarify on threads: comments don’t logically “span” rounds. A thread usually belongs to a specific review round, plus an associated diff hunk at that point in time (we put extra context lines there just because we can), and the conversation belongs to that thread - timeless. Also, the threads file should not be keyed by file, rather have an index that shows different groupings, like by file but also by review round, etc.\n\nFurthermore, I’d like more internal GitHub ids to identify things more canonically."
+        }
+      ]
+    },
+    {
+      "sender": "assistant",
+      "index": 19,
+      "created_at": "2026-04-04T09:09:58.643970Z",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "The user is making several important corrections and additions:\n\n1. Threads don't span rounds - a thread belongs to one round, and its conversation is just part of that thread, not cross-round\n2. threads.json should have a flat list of threads plus index sections for different groupings (by file, by round, etc.)\n3. More GitHub internal IDs throughout\n\nLet me revise the structure.",
+          "summaries": [
+            {
+              "summary": "Thinking about restructuring thread organization by review round and diff context with canonical GitHub identifiers."
+            },
+            {
+              "summary": "Restructuring threads architecture and incorporating canonical GitHub identifiers."
+            },
+            {
+              "summary": "Restructured data model to isolate threads, flatten indexing, and incorporate GitHub identifiers."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "You're right — I was overcomplicating the thread-round relationship. A thread is born in a round, anchored to a code location at that moment. The conversation under it is just people talking, it doesn't shift to a new round when a new review happens. The round is the thread's origin, not a property of individual comments.\n\n**Revised `threads.json`:**\n\n```json\n{\n  \"threads\": [\n    {\n      \"thread_id\": \"PRT_abc123\",\n      \"github_node_id\": \"PRRT_abc123...\",\n      \"round_number\": 1,\n      \n      \"anchor\": {\n        \"path\": \"pool/conn.go\",\n        \"line\": 47,\n        \"start_line\": 45,\n        \"side\": \"RIGHT\",\n        \"original_commit\": \"abc123...\"\n      },\n      \n      \"original_diff_hunk\": \"@@ -38,12 +38,20 @@ ...\",\n      \"original_diff_hunk_context_lines\": 8,\n      \n      \"is_resolved\": true,\n      \"is_outdated\": false,\n      \"resolution_type\": null,\n      \n      \"comments\": [\n        {\n          \"comment_id\": 12345678,\n          \"github_node_id\": \"PRRC_xyz...\",\n          \"github_review_id\": 98765432,\n          \"author\": \"yourusername\",\n          \"author_id\": 111222,\n          \"is_target_user\": true,\n          \"association\": \"MEMBER\",\n          \"body\": \"This leaks if Dial fails...\",\n          \"body_html\": \"<p>This leaks if Dial fails...</p>\",\n          \"created_at\": \"...\",\n          \"updated_at\": null,\n          \"commit_sha\": \"abc123...\",\n          \"diff_hunk_at_time\": \"@@ -38,12 +38,20 @@ ...\",\n          \"is_outdated\": false,\n          \"in_reply_to_id\": null,\n          \"reactions\": {}\n        },\n        {\n          \"comment_id\": 12345679,\n          \"github_node_id\": \"PRRC_xyz2...\",\n          \"github_review_id\": null,\n          \"author\": \"junior-dev\",\n          \"author_id\": 333444,\n          \"is_target_user\": false,\n          \"association\": \"CONTRIBUTOR\",\n          \"body\": \"Good catch, fixed in def456\",\n          \"body_html\": \"...\",\n          \"created_at\": \"...\",\n          \"updated_at\": null,\n          \"commit_sha\": \"abc123...\",\n          \"diff_hunk_at_time\": \"@@ -38,12 +38,20 @@ ...\",\n          \"is_outdated\": false,\n          \"in_reply_to_id\": 12345678,\n          \"reactions\": {\"thumbs_up\": 1}\n        }\n      ]\n    }\n  ],\n\n  \"indexes\": {\n    \"by_file\": {\n      \"pool/conn.go\": [\"PRT_abc123\", \"PRT_abc124\"],\n      \"pool/pool.go\": [\"PRT_abc125\"]\n    },\n    \"by_round\": {\n      \"1\": [\"PRT_abc123\", \"PRT_abc124\", \"PRT_abc125\"],\n      \"2\": [\"PRT_abc130\"]\n    },\n    \"by_resolution\": {\n      \"resolved\": [\"PRT_abc123\", \"PRT_abc125\"],\n      \"unresolved\": [\"PRT_abc124\", \"PRT_abc130\"],\n      \"outdated\": []\n    }\n  }\n}\n```\n\n**Revised `pr.json` with more GitHub IDs:**\n\n```json\n{\n  \"schema_version\": \"0.1.0\",\n  \n  \"export_metadata\": {\n    \"exported_at\": \"...\",\n    \"exported_by\": \"gh-prexport\",\n    \"exporter_version\": \"0.1.0\",\n    \"target_user\": \"yourusername\",\n    \"target_user_id\": 111222\n  },\n\n  \"repo\": {\n    \"owner\": \"someorg\",\n    \"owner_id\": 555666,\n    \"name\": \"someproject\",\n    \"repo_id\": 777888,\n    \"github_node_id\": \"R_abc...\",\n    \"primary_language\": \"go\",\n    \"is_fork\": false,\n    \"default_branch\": \"main\"\n  },\n\n  \"pr\": {\n    \"number\": 142,\n    \"pr_id\": 1234567890,\n    \"github_node_id\": \"PR_xyz...\",\n    \"url\": \"https://github.com/someorg/someproject/pull/142\",\n    \"api_url\": \"https://api.github.com/repos/someorg/someproject/pulls/142\",\n    \"title\": \"Fix connection pool cleanup on dial failure\",\n    \"body\": \"...\",\n    \"state\": \"merged\",\n    \"author\": \"junior-dev\",\n    \"author_id\": 333444,\n    \"branch_head\": \"fix/pool-cleanup\",\n    \"branch_base\": \"main\",\n    \"base_sha\": \"fff000...\",\n    \"head_sha\": \"abc999...\",\n    \"labels\": [\n      {\"name\": \"bugfix\", \"id\": 9001}\n    ],\n    \"created_at\": \"...\",\n    \"updated_at\": \"...\",\n    \"merged_at\": \"...\",\n    \"closed_at\": \"...\",\n    \"merge_commit_sha\": \"...\",\n    \"final_files_changed\": 12,\n    \"final_additions\": 340,\n    \"final_deletions\": 87\n  },\n\n  \"target_user\": {\n    \"login\": \"yourusername\",\n    \"user_id\": 111222,\n    \"github_node_id\": \"U_abc...\",\n    \"role\": \"reviewer\",\n    \"association\": \"MEMBER\"\n  },\n\n  \"participants\": [\n    {\n      \"login\": \"junior-dev\",\n      \"user_id\": 333444,\n      \"github_node_id\": \"U_def...\",\n      \"role\": \"author\",\n      \"association\": \"CONTRIBUTOR\"\n    },\n    {\n      \"login\": \"other-reviewer\",\n      \"user_id\": 555666,\n      \"github_node_id\": \"U_ghi...\",\n      \"role\": \"reviewer\",\n      \"association\": \"MEMBER\"\n    }\n  ],\n\n  \"rounds\": [\n    {\n      \"round_number\": 1,\n      \"snapshot_sha\": \"abc123...\",\n      \"submitted_at\": \"...\",\n      \"review\": {\n        \"review_id\": 98765432,\n        \"github_node_id\": \"PRR_abc...\",\n        \"state\": \"CHANGES_REQUESTED\",\n        \"body\": \"Couple of things to address...\",\n        \"body_html\": \"...\"\n      },\n      \"thread_ids\": [\"PRT_abc123\", \"PRT_abc124\", \"PRT_abc125\"],\n      \"gap_to_next\": {\n        \"duration_seconds\": 86400,\n        \"push_shas\": [\"def456...\", \"def789...\"],\n        \"developer_reply_count\": 3\n      }\n    },\n    {\n      \"round_number\": 2,\n      \"snapshot_sha\": \"ghi789...\",\n      \"submitted_at\": \"...\",\n      \"review\": {\n        \"review_id\": 98765500,\n        \"github_node_id\": \"PRR_def...\",\n        \"state\": \"APPROVED\",\n        \"body\": \"Looks good. Just rename that helper, I trust you.\",\n        \"body_html\": \"...\"\n      },\n      \"thread_ids\": [\"PRT_abc130\"],\n      \"gap_to_next\": null\n    }\n  ],\n\n  \"pushes\": [\n    {\n      \"sha\": \"abc123...\",\n      \"parent_sha\": \"fff000...\",\n      \"message\": \"initial implementation\",\n      \"author\": \"junior-dev\",\n      \"author_id\": 333444,\n      \"timestamp\": \"...\",\n      \"is_force_push\": false,\n      \"after_round\": null\n    },\n    {\n      \"sha\": \"def456...\",\n      \"parent_sha\": \"abc123...\",\n      \"message\": \"address review: fix dial leak\",\n      \"author\": \"junior-dev\",\n      \"author_id\": 333444,\n      \"timestamp\": \"...\",\n      \"is_force_push\": false,\n      \"after_round\": 1\n    }\n  ]\n}\n```\n\nThe key changes: threads are a flat list with precomputed indexes alongside them, `round_number` lives only on the thread not on comments, `github_node_id` and numeric IDs on every entity that has them in GitHub's data model (`comment_id`, `review_id`, `pr_id`, `user_id`, `repo_id`, etc.), and both `body` and `body_html` preserved since GitHub renders markdown server-side and the HTML can contain rendered suggestion blocks that look different from the raw markdown.\n\nThe indexes are cheap to compute at export time and save any consumer from scanning the full thread list. Easy to add new groupings later too — by author, by outdated status, whatever makes sense.\n\nReady for API mapping?"
+        }
+      ]
+    },
+    {
+      "sender": "human",
+      "index": 20,
+      "created_at": "2026-04-04T09:13:17.193524Z",
+      "content": [
+        {
+          "type": "text",
+          "text": "That’s perfect! Generate artifacts in this Claude project so that we can reference this plan more easily."
+        }
+      ]
+    },
+    {
+      "sender": "assistant",
+      "index": 21,
+      "created_at": "2026-04-04T09:17:07.467605Z",
+      "content": [
+        {
+          "type": "thinking",
+          "thinking": "The user wants me to create reference documents for this project plan. I should create well-organized files that capture the schema design, directory structure, and all the decisions we've made. Let me create a few key documents.\n\nLet me think about what files would be most useful:\n\n1. A main design document / README covering the project overview\n2. The schema specification with all the JSON structures\n3. The directory/file layout specification\n\nLet me create these as markdown files in the outputs directory.",
+          "summaries": [
+            {
+              "summary": "Thinking about creating artifacts to organize a previously discussed plan."
+            },
+            {
+              "summary": "Architecting reference documents for project organization."
+            },
+            {
+              "summary": "Architected reference documents to organize project specifications."
+            }
+          ]
+        },
+        {
+          "type": "thinking",
+          "thinking": "Now let me create the directory structure document.",
+          "summaries": [
+            {
+              "summary": "Architected directory structure for artifact documentation."
+            }
+          ]
+        },
+        {
+          "type": "thinking",
+          "thinking": "Now let me create the schema specification with the full JSON structures.",
+          "summaries": [
+            {
+              "summary": "Architected comprehensive JSON schema structures for artifact generation."
+            }
+          ]
+        },
+        {
+          "type": "thinking",
+          "thinking": "Now let me create a document about the API mapping - which GitHub API endpoints map to which parts of the schema. This would be useful for implementation.",
+          "summaries": [
+            {
+              "summary": "Architected API endpoint documentation for implementation reference."
+            }
+          ]
+        },
+        {
+          "type": "thinking",
+          "thinking": "Let me also create a glossary/decisions doc to capture the key design decisions and terminology.",
+          "summaries": [
+            {
+              "summary": "Devised glossary and design decisions documentation framework."
+            }
+          ]
+        },
+        {
+          "type": "thinking",
+          "thinking": "Now let me present all the files."
+        },
+        {
+          "type": "thinking",
+          "thinking": "All five documents are created and presented.",
+          "summaries": [
+            {
+              "summary": "Assembled comprehensive documents for streamlined reference."
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "text": "Five reference documents for the project:\n\n1. **Design Overview** — Purpose, philosophy, core concepts, what gets captured\n2. **Directory Structure** — Full layout with file responsibilities and future batch format\n3. **Schema Specification** — Complete JSON examples for every file type, enum reference, nullable field catalog\n4. **API Mapping** — Which GitHub endpoints populate which schema fields, GraphQL query shape, rate limiting estimates, open implementation questions\n5. **Glossary & Decisions** — Terminology definitions and the 10 key design decisions with rationale\n\nThese should work well as project knowledge for future conversations. The API mapping doc (04) also surfaces some implementation questions worth resolving before coding — particularly around loose comment grouping, force push handling, and whether to capture PR-level conversation comments alongside review comments."
+        }
+      ]
+    }
+  ]
+}
