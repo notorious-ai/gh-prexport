@@ -113,13 +113,23 @@ rationale (traced to workflow), and acceptance sketch.
 - `docs: define core functional needs N-01 through N-06`
 - CRITICAL: commit each need separately
 
-### Step 2.2 — Supporting functional needs (N-07 through N-10)
+### Step 2.2 — Supporting functional needs (N-07 through N-11)
 
-- 4 files in `docs/needs/`
+- 5 files in `docs/needs/`
 - N-07 API Efficiency, N-08 Graceful Degradation, N-09 Target User Perspective,
-  N-10 Schema Evolution
-- `docs: define supporting functional needs N-07 through N-10`
+  N-10 Schema Evolution, N-11 Archive Integrity
+- N-11 captures the gap left by the absent validation workflow (W-04 in the
+  original plan). The archive must be internally consistent: blob references
+  resolve, snapshot manifests exist for all round SHAs, diff files are present.
+  Whether this is enforced as a W-01 postcondition or a standalone `validate`
+  command is a design decision for Phase 5; the need is agnostic to mechanism.
+  Traces to mission success criterion #1.
+- `docs: define supporting functional needs N-07 through N-11`
 - CRITICAL: commit each need separately
+- **Forward reference**: after creating N-09, update the `[n09]` link in
+  `docs/reference/00-original-conversation.md:169` to point at the new file.
+  Re-evaluate whether the influence map's characterisation still holds against
+  the need as written.
 
 ---
 
@@ -174,6 +184,10 @@ Resolve the 6 open implementation questions from reference/04-api-mapping.md.
 - Three approaches (timestamp window, commit SHA, unassigned), evaluation,
   recommendation → impacts R-EXP-02
 - `docs: analyse loose comment grouping strategies (A-01)`
+- **Forward reference**: after creating A-01, update the `[A-01]` link in
+  `docs/conops/W-01-single-pr-export.md:36` to point at the new file.
+  Re-evaluate whether W-01's description of the grouping problem still
+  accurately frames the analysis.
 
 ### Step 4.2 — A-02: Context file scope and configurability
 
@@ -244,21 +258,17 @@ documented.
 
 ---
 
-## Session scope today
+## Progress
 
-**Execute**: Phase 0 (Steps 0.1–0.3) + begin Phase 1 (Step 1.1 mission
-analysis).
+**Phase 0**: Complete (Steps 0.1–0.3). Reference docs committed, scaffold
+created, glossary established.
 
-The mission analysis (Step 1.1) requires human input. I will draft a structure
-and the human will provide the substance — problem framing, mission statement,
-and scope boundaries from their own understanding.
+**Phase 1**: Complete (Steps 1.1–1.5). Mission, actors, environment, W-01,
+W-02 committed. Original design conversation preserved with influence map.
 
-DO NOT begin Phase 2. We will save this plan in the repository (root is fine, we
-will delete it once it is done) so we can continue in another session. Phase 2
-will pull in the [original design conversation][conversation.json] (distilled in
-[00-original-conversation.md][conversation.md]) for more fine details that are
-relevant to understand the full decisions and analysis taken, even refine some
-needs and workflows.
+**Phase 2**: Next. Pull in the [original design conversation][conversation.json]
+(distilled in [00-original-conversation.md][conversation.md]) for fine details
+that inform needs. Commit each need separately.
 
 [conversation.json]: docs/reference/00-design-conversation.json
 [conversation.md]: docs/reference/00-original-conversation.md
