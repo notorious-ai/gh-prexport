@@ -179,4 +179,4 @@ How the conversation shaped the systems engineering artifacts:
 [ref-01]: 01-design-overview.md
 [ref-02]: 02-directory-structure.md
 [ref-05]: 05-glossary-and-decisions.md
-[n09]: ../needs/
+[n09]: ../needs/N-09-target-user-perspective.md
