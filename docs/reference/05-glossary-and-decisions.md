@@ -68,6 +68,8 @@ Each PR exports to a fully independent directory. No shared state across PRs.
 This simplifies the prototype, makes partial exports and retries trivial, and
 the merge command handles batching later.
 
+Formalized as [D-06][d-06].
+
 ### 7. Both markdown body and HTML body
 
 GitHub renders markdown server-side. The HTML version preserves rendered
@@ -101,3 +103,4 @@ documents why each was included.
 [d-03]: ../decisions/D-03-data-duplication-over-normalization.md
 [d-04]: ../decisions/D-04-blobs-for-file-contents.md
 [d-05]: ../decisions/D-05-patch-files-are-not-json.md
+[d-06]: ../decisions/D-06-single-pr-atomic-unit.md

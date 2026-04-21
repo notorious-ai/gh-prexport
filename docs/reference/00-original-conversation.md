@@ -121,8 +121,8 @@ the project within the medallion model: bronze (raw export) → silver (structur
 training examples) → gold (agent quality metrics).
 
 The user also established the **per-PR isolation** strategy: start with one
-independent directory per PR, add a merge command later. This became D-06
-(single-PR export as atomic unit) and shaped
+independent directory per PR, add a merge command later. This became
+[D-06 (single-PR export as atomic unit)][d-06] and shaped
 [W-02](../conops/W-02-batch-and-merge.md).
 
 ### Turn 9: File splitting
@@ -172,7 +172,7 @@ How the conversation shaped the systems engineering artifacts:
 | Thread realism (turn 5)           | [D-02][d-02] — no inference at export time                                                             |
 | Thread-round association (turn 6) | [D-01][d-01] — threads belong to rounds                                                                |
 | Medallion model (turn 8)          | [mission.md](../mission.md) — data architecture position                                               |
-| Per-PR isolation (turn 8)         | D-06 — single-PR atomic unit; [W-02](../conops/W-02-batch-and-merge.md)                                |
+| Per-PR isolation (turn 8)         | [D-06][d-06] — single-PR atomic unit; [W-02](../conops/W-02-batch-and-merge.md)                        |
 | File splitting rationale (turn 9) | [reference/02][ref-02] — directory structure                                                           |
 | Precomputed indexes (turn 10)     | D-08 — indexes in threads.json                                                                         |
 
@@ -182,3 +182,4 @@ How the conversation shaped the systems engineering artifacts:
 [n09]: ../needs/N-09-target-user-perspective.md
 [d-01]: ../decisions/D-01-threads-belong-to-rounds.md
 [d-02]: ../decisions/D-02-no-inference-at-export-time.md
+[d-06]: ../decisions/D-06-single-pr-atomic-unit.md
