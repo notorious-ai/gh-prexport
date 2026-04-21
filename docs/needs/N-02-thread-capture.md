@@ -46,6 +46,6 @@ The need is met when, for a given PR:
   no field that infers _why_ the thread was resolved, ignored, or left open.
 
 [d-01]: ../decisions/D-01-threads-belong-to-rounds.md
-[d-02]: ../reference/05-glossary-and-decisions.md#2-no-inference-at-export-time
+[d-02]: ../decisions/D-02-no-inference-at-export-time.md
 [w01-thread]: ../conops/W-01-single-pr-export.md#thread-capture
 [sc]: ../mission.md#success-criteria

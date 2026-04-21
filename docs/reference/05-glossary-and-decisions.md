@@ -33,6 +33,8 @@ without fixing, ignore threads, have verbal conversations outside GitHub. The
 export captures only what GitHub's API returns (`is_resolved`, `is_outdated`).
 Analysis tooling fills in the rest later.
 
+Formalized as [D-02][d-02].
+
 ### 3. Data duplication over normalization
 
 The same diff hunk may appear on a thread's `original_diff_hunk`, on each
@@ -89,3 +91,4 @@ API-wise and should be configurable. The `reason` field on context files
 documents why each was included.
 
 [d-01]: ../decisions/D-01-threads-belong-to-rounds.md
+[d-02]: ../decisions/D-02-no-inference-at-export-time.md

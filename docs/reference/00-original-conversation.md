@@ -96,9 +96,9 @@ success criterion in [mission.md](../mission.md) and motivated the
 The user pushed back on Claude's thread resolution inference. Claude's thinking
 block acknowledged: "I'm over-engineering the thread structure by trying to
 infer semantics from data that's inherently noisy and incomplete." This directly
-produced design decision D-02 (no inference at export time) in
-[reference/05][ref-05]: capture only what GitHub's API returns (`is_resolved`,
-`is_outdated`), leave interpretation to the analysis layer.
+produced design decision [D-02 (no inference at export time)][d-02]: capture
+only what GitHub's API returns (`is_resolved`, `is_outdated`), leave
+interpretation to the analysis layer.
 
 ### Turn 6: Thread-round association
 
@@ -169,7 +169,7 @@ How the conversation shaped the systems engineering artifacts:
 | "Giving in" pattern (turn 3)      | [N-09][n09] — target user perspective                                                                  |
 | Playground test (turn 4)          | [mission.md](../mission.md) — success criteria; [actors](../conops/actors.md) — visualization consumer |
 | Export not analysis (turn 4)      | [mission.md](../mission.md) — scope boundaries                                                         |
-| Thread realism (turn 5)           | D-02 — no inference at export time                                                                     |
+| Thread realism (turn 5)           | [D-02][d-02] — no inference at export time                                                             |
 | Thread-round association (turn 6) | [D-01][d-01] — threads belong to rounds                                                                |
 | Medallion model (turn 8)          | [mission.md](../mission.md) — data architecture position                                               |
 | Per-PR isolation (turn 8)         | D-06 — single-PR atomic unit; [W-02](../conops/W-02-batch-and-merge.md)                                |
@@ -181,3 +181,4 @@ How the conversation shaped the systems engineering artifacts:
 [ref-05]: 05-glossary-and-decisions.md
 [n09]: ../needs/N-09-target-user-perspective.md
 [d-01]: ../decisions/D-01-threads-belong-to-rounds.md
+[d-02]: ../decisions/D-02-no-inference-at-export-time.md
