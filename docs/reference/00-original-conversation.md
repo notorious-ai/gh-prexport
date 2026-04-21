@@ -96,9 +96,9 @@ success criterion in [mission.md](../mission.md) and motivated the
 The user pushed back on Claude's thread resolution inference. Claude's thinking
 block acknowledged: "I'm over-engineering the thread structure by trying to
 infer semantics from data that's inherently noisy and incomplete." This directly
-produced design decision D-02 (no inference at export time) in
-[reference/05][ref-05]: capture only what GitHub's API returns (`is_resolved`,
-`is_outdated`), leave interpretation to the analysis layer.
+produced design decision [D-02 (no inference at export time)][d-02]: capture
+only what GitHub's API returns (`is_resolved`, `is_outdated`), leave
+interpretation to the analysis layer.
 
 ### Turn 6: Thread-round association
 
@@ -107,8 +107,8 @@ produced design decision D-02 (no inference at export time) in
 
 A targeted structural correction: the round association belongs on the
 **thread**, not on individual comments. A thread is born in a round; the
-conversation under it is timeless. This became design decision D-01 (threads
-belong to rounds, comments don't) in [reference/05][ref-05].
+conversation under it is timeless. This became design decision
+[D-01 (threads belong to rounds, comments don't)][d-01].
 
 ### Turn 7-8: Format and the medallion model
 
@@ -121,8 +121,8 @@ the project within the medallion model: bronze (raw export) → silver (structur
 training examples) → gold (agent quality metrics).
 
 The user also established the **per-PR isolation** strategy: start with one
-independent directory per PR, add a merge command later. This became D-06
-(single-PR export as atomic unit) and shaped
+independent directory per PR, add a merge command later. This became
+[D-06 (single-PR export as atomic unit)][d-06] and shaped
 [W-02](../conops/W-02-batch-and-merge.md).
 
 ### Turn 9: File splitting
@@ -169,14 +169,18 @@ How the conversation shaped the systems engineering artifacts:
 | "Giving in" pattern (turn 3)      | [N-09][n09] — target user perspective                                                                  |
 | Playground test (turn 4)          | [mission.md](../mission.md) — success criteria; [actors](../conops/actors.md) — visualization consumer |
 | Export not analysis (turn 4)      | [mission.md](../mission.md) — scope boundaries                                                         |
-| Thread realism (turn 5)           | D-02 — no inference at export time                                                                     |
-| Thread-round association (turn 6) | D-01 — threads belong to rounds                                                                        |
+| Thread realism (turn 5)           | [D-02][d-02] — no inference at export time                                                             |
+| Thread-round association (turn 6) | [D-01][d-01] — threads belong to rounds                                                                |
 | Medallion model (turn 8)          | [mission.md](../mission.md) — data architecture position                                               |
-| Per-PR isolation (turn 8)         | D-06 — single-PR atomic unit; [W-02](../conops/W-02-batch-and-merge.md)                                |
+| Per-PR isolation (turn 8)         | [D-06][d-06] — single-PR atomic unit; [W-02](../conops/W-02-batch-and-merge.md)                        |
 | File splitting rationale (turn 9) | [reference/02][ref-02] — directory structure                                                           |
-| Precomputed indexes (turn 10)     | D-08 — indexes in threads.json                                                                         |
+| Precomputed indexes (turn 10)     | [D-08][d-08] — indexes in threads.json                                                                 |
 
 [ref-01]: 01-design-overview.md
 [ref-02]: 02-directory-structure.md
 [ref-05]: 05-glossary-and-decisions.md
 [n09]: ../needs/N-09-target-user-perspective.md
+[d-01]: ../decisions/D-01-threads-belong-to-rounds.md
+[d-02]: ../decisions/D-02-no-inference-at-export-time.md
+[d-06]: ../decisions/D-06-single-pr-atomic-unit.md
+[d-08]: ../decisions/D-08-precomputed-thread-indexes.md

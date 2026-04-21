@@ -19,15 +19,16 @@ includes the document where it is first defined or most fully described.
 
 ## Data Architecture Terms
 
-| Term                          | Definition                                                                                                               | Origin                             |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- |
-| **Bronze tier**               | Raw exported data with no analysis, inference, or transformation. First stage of the Medallion model.                    | [reference/01][ref-01] §Purpose    |
-| **Medallion model**           | A data architecture pattern organizing data into bronze (raw), silver (cleaned/structured), and gold (aggregated) tiers. | [reference/01][ref-01] §Purpose    |
-| **Export archive**            | The self-contained directory tree produced by a single export run, containing all JSON, patch, and blob files.           | [reference/02][ref-02] §Layout     |
-| **Content-addressed storage** | File storage keyed by git blob SHA, enabling natural deduplication when the same file appears across multiple snapshots. | [reference/02][ref-02] §Blobs      |
-| **Target user perspective**   | The organizing principle of the export: rounds, threads, and gaps are defined relative to the target user's activity.    | [reference/05][ref-05] §Decision 1 |
+| Term                          | Definition                                                                                                               | Origin                          |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------- |
+| **Bronze tier**               | Raw exported data with no analysis, inference, or transformation. First stage of the Medallion model.                    | [reference/01][ref-01] §Purpose |
+| **Medallion model**           | A data architecture pattern organizing data into bronze (raw), silver (cleaned/structured), and gold (aggregated) tiers. | [reference/01][ref-01] §Purpose |
+| **Export archive**            | The self-contained directory tree produced by a single export run, containing all JSON, patch, and blob files.           | [reference/02][ref-02] §Layout  |
+| **Content-addressed storage** | File storage keyed by git blob SHA, enabling natural deduplication when the same file appears across multiple snapshots. | [reference/02][ref-02] §Blobs   |
+| **Target user perspective**   | The organizing principle of the export: rounds, threads, and gaps are defined relative to the target user's activity.    | [D-01][d-01]                    |
 
 [ref-01]: reference/01-design-overview.md
 [ref-02]: reference/02-directory-structure.md
 [ref-04]: reference/04-api-mapping.md
 [ref-05]: reference/05-glossary-and-decisions.md
+[d-01]: decisions/D-01-threads-belong-to-rounds.md

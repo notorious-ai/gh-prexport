@@ -23,6 +23,8 @@ conversation under the thread is timeless; individual comments don't carry round
 associations. This avoids misattributing replies and developer responses to
 reviewer rounds they weren't part of.
 
+Formalized as [D-01][d-01].
+
 ### 2. No inference at export time
 
 Fields like `resolution_type` exist as placeholders (`null`) but are never
@@ -31,12 +33,16 @@ without fixing, ignore threads, have verbal conversations outside GitHub. The
 export captures only what GitHub's API returns (`is_resolved`, `is_outdated`).
 Analysis tooling fills in the rest later.
 
+Formalized as [D-02][d-02].
+
 ### 3. Data duplication over normalization
 
 The same diff hunk may appear on a thread's `original_diff_hunk`, on each
 comment's `diff_hunk_at_time`, and in a patch file under `diffs/`. This is
 intentional — each location serves a different access pattern, and consumers
 shouldn't need to cross-reference files for basic operations.
+
+Formalized as [D-03][d-03].
 
 ### 4. Blobs for file contents, inline for everything else
 
@@ -45,6 +51,8 @@ metadata, and thread conversations stay in their respective JSON files. The
 split is driven by deduplication potential (high for file contents, low for
 everything else) and size (file contents dominate storage).
 
+Formalized as [D-04][d-04].
+
 ### 5. Patch files are not JSON
 
 Diffs are stored as plain `.patch` files in unified diff format. They're an
@@ -52,11 +60,15 @@ established format with native tool support, they compress well, and embedding
 large diffs in JSON adds escaping overhead and makes the JSON files hard to
 navigate.
 
+Formalized as [D-05][d-05].
+
 ### 6. Single-PR export as the atomic unit
 
 Each PR exports to a fully independent directory. No shared state across PRs.
 This simplifies the prototype, makes partial exports and retries trivial, and
 the merge command handles batching later.
+
+Formalized as [D-06][d-06].
 
 ### 7. Both markdown body and HTML body
 
@@ -65,12 +77,16 @@ suggestion blocks, formatted tables, and other GitHub-specific markdown
 extensions that may look different from raw markdown. Both are stored to give
 consumers the choice.
 
+Formalized as [D-07][d-07].
+
 ### 8. Indexes in threads.json are precomputed conveniences
 
 The `indexes` object in `threads.json` groups thread IDs by file, round, and
 resolution status. These are cheap to compute at export time and save consumers
 from scanning the full thread list. New index types can be added in future
 schema versions without breaking existing data.
+
+Formalized as [D-08][d-08].
 
 ### 9. Per-PR blob scope, not cross-repo
 
@@ -79,9 +95,24 @@ to the merge command, which promotes blobs to a shared store when combining
 exports into `repo-batch` format. This keeps each export self-contained and
 moveable.
 
+Formalized as [D-09][d-09].
+
 ### 10. Context files scoped to same package/directory
 
 For Go repos, context means all `.go` files in the same directory (package). For
 other languages, same directory is the default. This is the most expensive part
 API-wise and should be configurable. The `reason` field on context files
 documents why each was included.
+
+Formalized as [D-10][d-10].
+
+[d-01]: ../decisions/D-01-threads-belong-to-rounds.md
+[d-02]: ../decisions/D-02-no-inference-at-export-time.md
+[d-03]: ../decisions/D-03-data-duplication-over-normalization.md
+[d-04]: ../decisions/D-04-blobs-for-file-contents.md
+[d-05]: ../decisions/D-05-patch-files-are-not-json.md
+[d-06]: ../decisions/D-06-single-pr-atomic-unit.md
+[d-07]: ../decisions/D-07-dual-body-md-and-html.md
+[d-08]: ../decisions/D-08-precomputed-thread-indexes.md
+[d-09]: ../decisions/D-09-per-pr-blob-scope.md
+[d-10]: ../decisions/D-10-context-files-same-package.md
