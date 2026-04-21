@@ -42,6 +42,8 @@ comment's `diff_hunk_at_time`, and in a patch file under `diffs/`. This is
 intentional — each location serves a different access pattern, and consumers
 shouldn't need to cross-reference files for basic operations.
 
+Formalized as [D-03][d-03].
+
 ### 4. Blobs for file contents, inline for everything else
 
 File contents are the only data externalized to the blob store. Diffs, comments,
@@ -92,3 +94,4 @@ documents why each was included.
 
 [d-01]: ../decisions/D-01-threads-belong-to-rounds.md
 [d-02]: ../decisions/D-02-no-inference-at-export-time.md
+[d-03]: ../decisions/D-03-data-duplication-over-normalization.md
