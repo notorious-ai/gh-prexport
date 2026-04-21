@@ -31,7 +31,7 @@ jq -r '.chat_messages[5].content[] | select(.type=="thinking") | .thinking' \
 
 ## The Arc: 11 Turns in 13 Hours
 
-### Turn 1 — Is there an existing tool?
+### Turn 1: Is there an existing tool?
 
 > Is there an open source tool that scrapes my GitHub account for all my PR
 > comments and reviews and exports it so that I can fine tune LLM agents on it
@@ -42,7 +42,7 @@ a ~200-line Go CLI with `gh` as the auth layer, emitting JSONL of
 `(diff_hunk, comment)` pairs. This initial framing was flat and context-free;
 the conversation would reshape it entirely.
 
-### Turn 2 — What data matters?
+### Turn 2: What data matters?
 
 > What would be the most comprehensive list of information that is useful for
 > later use with LLMs to replicate and learn the user's code practices?
@@ -53,7 +53,7 @@ commit-level evolution, temporal/social context, and the "negative space" (what
 the reviewer did not comment on). The proposed `PRInteraction` record was
 comprehensive but temporally flat.
 
-### Turn 3 — The pivotal correction: rounds
+### Turn 3: The pivotal correction, rounds
 
 > This conceptual scheme doesn't reflect the relevant points in time. My reviews
 > often involves several "rounds". Each time I'd go on the GitHub UI, place a
@@ -73,7 +73,7 @@ pattern motivated the thread conversation model's preservation of the full arc
 across rounds, and later influenced [N-09][n09] (target user perspective) and
 the thread-round association model.
 
-### Turn 4 — Scope decisions
+### Turn 4: Scope decisions
 
 > Pure API for now, this is a GitHub CLI extension, developed with Go. The focus
 > of this project is on exporting data, no analysis yet. Data duplication is
@@ -87,7 +87,7 @@ philosophy (export not analysis), economics (storage is cheap), and the
 success criterion in [mission.md](../mission.md) and motivated the
 [Visualization Consumer](../conops/actors.md#visualization-consumer) actor.
 
-### Turn 5 — Thread realism
+### Turn 5: Thread realism
 
 > I still think you put too much into threads, people crap all over them. Some
 > people just resolve and forget to fix, others wait for the reviewer to
@@ -100,7 +100,7 @@ produced design decision D-02 (no inference at export time) in
 [reference/05][ref-05]: capture only what GitHub's API returns (`is_resolved`,
 `is_outdated`), leave interpretation to the analysis layer.
 
-### Turn 6 — Thread-round association
+### Turn 6: Thread-round association
 
 > It's ok to keep placeholders for some insights, like that resolution type.
 > Also, round is importantly but I think per thread rather than per comment.
@@ -110,7 +110,7 @@ A targeted structural correction: the round association belongs on the
 conversation under it is timeless. This became design decision D-01 (threads
 belong to rounds, comments don't) in [reference/05][ref-05].
 
-### Turn 7-8 — Format and the medallion model
+### Turn 7-8: Format and the medallion model
 
 > I agree with Directory tree with content-addressable blob store. This is the
 > "bronze tier" data (borrowed from the Medallion model of OLAP).
@@ -125,7 +125,7 @@ independent directory per PR, add a merge command later. This became D-06
 (single-PR export as atomic unit) and shaped
 [W-02](../conops/W-02-batch-and-merge.md).
 
-### Turn 9 — File splitting
+### Turn 9: File splitting
 
 > I wonder if there's value in keeping all threads as a single file, and all
 > rounds too. Consider both merging into existing/new files and splitting into
@@ -138,7 +138,7 @@ split: rounds stay in `pr.json` (always small), threads get their own
 `threads.json` (scales with discussion volume), and file contents are
 externalized to the blob store.
 
-### Turn 10 — Final corrections
+### Turn 10: Final corrections
 
 > Just to clarify on threads: comments don't logically "span" rounds. A thread
 > usually belongs to a specific review round [...] and the conversation belongs
@@ -150,7 +150,7 @@ Two final refinements: (1) thread conversations are timeless, not cross-round;
 `by_round`, `by_resolution`) rather than a file-keyed structure. The user also
 requested canonical GitHub IDs throughout (node IDs, numeric IDs).
 
-### Turn 11 — Artifact generation
+### Turn 11: Artifact generation
 
 > Generate artifacts in this Claude project so that we can reference this plan
 > more easily.
