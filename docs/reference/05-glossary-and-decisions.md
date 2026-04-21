@@ -60,6 +60,8 @@ established format with native tool support, they compress well, and embedding
 large diffs in JSON adds escaping overhead and makes the JSON files hard to
 navigate.
 
+Formalized as [D-05][d-05].
+
 ### 6. Single-PR export as the atomic unit
 
 Each PR exports to a fully independent directory. No shared state across PRs.
@@ -98,3 +100,4 @@ documents why each was included.
 [d-02]: ../decisions/D-02-no-inference-at-export-time.md
 [d-03]: ../decisions/D-03-data-duplication-over-normalization.md
 [d-04]: ../decisions/D-04-blobs-for-file-contents.md
+[d-05]: ../decisions/D-05-patch-files-are-not-json.md
