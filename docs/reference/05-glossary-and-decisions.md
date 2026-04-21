@@ -77,6 +77,8 @@ suggestion blocks, formatted tables, and other GitHub-specific markdown
 extensions that may look different from raw markdown. Both are stored to give
 consumers the choice.
 
+Formalized as [D-07][d-07].
+
 ### 8. Indexes in threads.json are precomputed conveniences
 
 The `indexes` object in `threads.json` groups thread IDs by file, round, and
@@ -104,3 +106,4 @@ documents why each was included.
 [d-04]: ../decisions/D-04-blobs-for-file-contents.md
 [d-05]: ../decisions/D-05-patch-files-are-not-json.md
 [d-06]: ../decisions/D-06-single-pr-atomic-unit.md
+[d-07]: ../decisions/D-07-dual-body-md-and-html.md
