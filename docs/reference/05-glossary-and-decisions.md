@@ -95,6 +95,8 @@ to the merge command, which promotes blobs to a shared store when combining
 exports into `repo-batch` format. This keeps each export self-contained and
 moveable.
 
+Formalized as [D-09][d-09].
+
 ### 10. Context files scoped to same package/directory
 
 For Go repos, context means all `.go` files in the same directory (package). For
@@ -110,3 +112,4 @@ documents why each was included.
 [d-06]: ../decisions/D-06-single-pr-atomic-unit.md
 [d-07]: ../decisions/D-07-dual-body-md-and-html.md
 [d-08]: ../decisions/D-08-precomputed-thread-indexes.md
+[d-09]: ../decisions/D-09-per-pr-blob-scope.md
