@@ -23,6 +23,8 @@ conversation under the thread is timeless; individual comments don't carry round
 associations. This avoids misattributing replies and developer responses to
 reviewer rounds they weren't part of.
 
+Formalized as [D-01][d-01].
+
 ### 2. No inference at export time
 
 Fields like `resolution_type` exist as placeholders (`null`) but are never
@@ -85,3 +87,5 @@ For Go repos, context means all `.go` files in the same directory (package). For
 other languages, same directory is the default. This is the most expensive part
 API-wise and should be configurable. The `reason` field on context files
 documents why each was included.
+
+[d-01]: ../decisions/D-01-threads-belong-to-rounds.md

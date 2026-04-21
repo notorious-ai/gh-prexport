@@ -45,7 +45,7 @@ The need is met when, for a given PR:
 - Each thread carries GitHub's resolution signals verbatim; the archive contains
   no field that infers _why_ the thread was resolved, ignored, or left open.
 
-[d-01]: ../reference/05-glossary-and-decisions.md#1-threads-belong-to-rounds-comments-dont
+[d-01]: ../decisions/D-01-threads-belong-to-rounds.md
 [d-02]: ../reference/05-glossary-and-decisions.md#2-no-inference-at-export-time
 [w01-thread]: ../conops/W-01-single-pr-export.md#thread-capture
 [sc]: ../mission.md#success-criteria

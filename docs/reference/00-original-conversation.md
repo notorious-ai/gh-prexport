@@ -107,8 +107,8 @@ produced design decision D-02 (no inference at export time) in
 
 A targeted structural correction: the round association belongs on the
 **thread**, not on individual comments. A thread is born in a round; the
-conversation under it is timeless. This became design decision D-01 (threads
-belong to rounds, comments don't) in [reference/05][ref-05].
+conversation under it is timeless. This became design decision
+[D-01 (threads belong to rounds, comments don't)][d-01].
 
 ### Turn 7-8: Format and the medallion model
 
@@ -170,7 +170,7 @@ How the conversation shaped the systems engineering artifacts:
 | Playground test (turn 4)          | [mission.md](../mission.md) — success criteria; [actors](../conops/actors.md) — visualization consumer |
 | Export not analysis (turn 4)      | [mission.md](../mission.md) — scope boundaries                                                         |
 | Thread realism (turn 5)           | D-02 — no inference at export time                                                                     |
-| Thread-round association (turn 6) | D-01 — threads belong to rounds                                                                        |
+| Thread-round association (turn 6) | [D-01][d-01] — threads belong to rounds                                                                |
 | Medallion model (turn 8)          | [mission.md](../mission.md) — data architecture position                                               |
 | Per-PR isolation (turn 8)         | D-06 — single-PR atomic unit; [W-02](../conops/W-02-batch-and-merge.md)                                |
 | File splitting rationale (turn 9) | [reference/02][ref-02] — directory structure                                                           |
@@ -180,3 +180,4 @@ How the conversation shaped the systems engineering artifacts:
 [ref-02]: 02-directory-structure.md
 [ref-05]: 05-glossary-and-decisions.md
 [n09]: ../needs/N-09-target-user-perspective.md
+[d-01]: ../decisions/D-01-threads-belong-to-rounds.md
