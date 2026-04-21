@@ -51,6 +51,8 @@ metadata, and thread conversations stay in their respective JSON files. The
 split is driven by deduplication potential (high for file contents, low for
 everything else) and size (file contents dominate storage).
 
+Formalized as [D-04][d-04].
+
 ### 5. Patch files are not JSON
 
 Diffs are stored as plain `.patch` files in unified diff format. They're an
@@ -95,3 +97,4 @@ documents why each was included.
 [d-01]: ../decisions/D-01-threads-belong-to-rounds.md
 [d-02]: ../decisions/D-02-no-inference-at-export-time.md
 [d-03]: ../decisions/D-03-data-duplication-over-normalization.md
+[d-04]: ../decisions/D-04-blobs-for-file-contents.md
