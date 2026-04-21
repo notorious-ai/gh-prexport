@@ -86,6 +86,8 @@ resolution status. These are cheap to compute at export time and save consumers
 from scanning the full thread list. New index types can be added in future
 schema versions without breaking existing data.
 
+Formalized as [D-08][d-08].
+
 ### 9. Per-PR blob scope, not cross-repo
 
 Blobs are stored within each PR's directory. Cross-PR deduplication is deferred
@@ -107,3 +109,4 @@ documents why each was included.
 [d-05]: ../decisions/D-05-patch-files-are-not-json.md
 [d-06]: ../decisions/D-06-single-pr-atomic-unit.md
 [d-07]: ../decisions/D-07-dual-body-md-and-html.md
+[d-08]: ../decisions/D-08-precomputed-thread-indexes.md

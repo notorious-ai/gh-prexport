@@ -174,7 +174,7 @@ How the conversation shaped the systems engineering artifacts:
 | Medallion model (turn 8)          | [mission.md](../mission.md) — data architecture position                                               |
 | Per-PR isolation (turn 8)         | [D-06][d-06] — single-PR atomic unit; [W-02](../conops/W-02-batch-and-merge.md)                        |
 | File splitting rationale (turn 9) | [reference/02][ref-02] — directory structure                                                           |
-| Precomputed indexes (turn 10)     | D-08 — indexes in threads.json                                                                         |
+| Precomputed indexes (turn 10)     | [D-08][d-08] — indexes in threads.json                                                                 |
 
 [ref-01]: 01-design-overview.md
 [ref-02]: 02-directory-structure.md
@@ -183,3 +183,4 @@ How the conversation shaped the systems engineering artifacts:
 [d-01]: ../decisions/D-01-threads-belong-to-rounds.md
 [d-02]: ../decisions/D-02-no-inference-at-export-time.md
 [d-06]: ../decisions/D-06-single-pr-atomic-unit.md
+[d-08]: ../decisions/D-08-precomputed-thread-indexes.md
