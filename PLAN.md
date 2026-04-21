@@ -117,17 +117,18 @@ rationale (traced to workflow), and acceptance sketch.
 
 - 5 files in `docs/needs/`
 - N-07 API Efficiency, N-08 Graceful Degradation, N-09 Target User Perspective,
-  N-10 Schema Evolution, N-11 Archive Integrity
-- N-11 captures the gap left by the absent validation workflow (W-04 in the
-  original plan). The archive must be internally consistent: blob references
-  resolve, snapshot manifests exist for all round SHAs, diff files are present.
-  Whether this is enforced as a W-01 postcondition or a standalone `validate`
-  command is a design decision for Phase 5; the need is agnostic to mechanism.
-  Traces to mission success criterion #1.
-- `docs: define supporting functional needs N-07 through N-11`
+  N-10 Schema Evolution, N-11 Archive Integrity Check
+- N-11 was re-scoped during drafting. The originally planned framing ("archive
+  must be internally consistent: blob references resolve, snapshot manifests
+  exist for all round SHAs, diff files are present") turned out to duplicate
+  N-06, which already mandates that every reference in the archive resolves to
+  data present in the archive. N-11 is therefore the _verification_ complement
+  to N-06: it names the capability of checking that the property N-06 asserts
+  actually holds on a given archive. A future `check` CLI subcommand is the
+  expected mechanism.
 - CRITICAL: commit each need separately
 - **Forward reference**: after creating N-09, update the `[n09]` link in
-  `docs/reference/00-original-conversation.md:169` to point at the new file.
+  `docs/reference/00-original-conversation.md` to point at the new file.
   Re-evaluate whether the influence map's characterisation still holds against
   the need as written.
 
@@ -263,12 +264,23 @@ documented.
 **Phase 0**: Complete (Steps 0.1–0.3). Reference docs committed, scaffold
 created, glossary established.
 
-**Phase 1**: Complete (Steps 1.1–1.5). Mission, actors, environment, W-01,
-W-02 committed. Original design conversation preserved with influence map.
+**Phase 1**: Complete (Steps 1.1–1.5). Mission, actors, environment, W-01, W-02
+committed. Original design conversation preserved with influence map.
 
-**Phase 2**: Next. Pull in the [original design conversation][conversation.json]
-(distilled in [00-original-conversation.md][conversation.md]) for fine details
-that inform needs. Commit each need separately.
+**Phase 2**: Complete. Steps 2.1 (N-01–N-06) and 2.2 (N-07–N-11) landed as
+separate commits per-need. N-11 was re-scoped during drafting from "archive
+integrity invariant" (which duplicated N-06) to "archive integrity check" (the
+verification capability that confirms N-06's invariant holds on an archive), as
+described in Step 2.2.
+
+**Phase 3**: Next. Pull in the reference docs (`reference/03` for schema,
+`reference/04` for API mapping, `reference/02` for storage layout) to derive the
+R-xxx requirements. Commit each requirement separately.
+
+Original Phase 2 sourcing note: the
+[original design conversation][conversation.json] (distilled in
+[00-original-conversation.md][conversation.md]) is the source for fine details
+not in the reference docs.
 
 [conversation.json]: docs/reference/00-design-conversation.json
 [conversation.md]: docs/reference/00-original-conversation.md
