@@ -29,7 +29,7 @@ evolution policy. Semantic versioning, date-stamped versions, or format-family
 labels like `single-pr` vs `repo-batch` are all permissible mechanisms; the need
 constrains the outcome (detectable, unambiguous, declared up front), not the
 convention. The specific labels and the transition policy belong to the
-[R-SCH][r-sch] requirements and the migrate/merge command that [W-02b][w02b]
+[R-ARCHV][r-archv] requirements and the migrate/merge command that [W-02b][w02b]
 introduces.
 
 Traces to [reference/01 §Versioning & Evolution][ref01-versioning],
@@ -63,4 +63,4 @@ The need is met when:
 [w02b]: ../conops/W-02-batch-and-merge.md#w-02b-merge-into-repo-batch-format
 [ref01-versioning]: ../reference/01-design-overview.md#versioning--evolution
 [sc]: ../mission.md#success-criteria
-[r-sch]: ../requirements/
+[r-archv]: ../requirements/

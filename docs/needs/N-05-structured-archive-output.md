@@ -25,7 +25,9 @@ captured, but a consumer has no reliable way to reach it.
 
 This need says that structure exists and is stable; it does not say what the
 structure is. The concrete filenames, directory layout, and field names belong
-to the [R-SCH][r-sch] and [R-STO][r-sto] requirements that follow from this
+to the [R-ARCHV][r-archv] requirements for archive-wide contracts and to the
+requirements for each captured entity ([R-REVW][r-revw], [R-THRD][r-thrd],
+[R-SNAP][r-snap], [R-DIFF][r-diff]) that follow from this
 need, informed by the existing [reference/02][ref02] and [reference/03][ref03]
 design documents.
 
@@ -53,7 +55,10 @@ The need is met when:
 
 [w01-archive]: ../conops/W-01-single-pr-export.md#archive-assembly
 [sc]: ../mission.md#success-criteria
-[r-sch]: ../requirements/
-[r-sto]: ../requirements/
+[r-archv]: ../requirements/
+[r-revw]: ../requirements/
+[r-thrd]: ../requirements/
+[r-snap]: ../requirements/
+[r-diff]: ../requirements/
 [ref02]: ../reference/02-directory-structure.md
 [ref03]: ../reference/03-schema-specification.md
