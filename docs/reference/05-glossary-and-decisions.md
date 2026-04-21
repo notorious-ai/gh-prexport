@@ -104,6 +104,8 @@ other languages, same directory is the default. This is the most expensive part
 API-wise and should be configurable. The `reason` field on context files
 documents why each was included.
 
+Formalized as [D-10][d-10].
+
 [d-01]: ../decisions/D-01-threads-belong-to-rounds.md
 [d-02]: ../decisions/D-02-no-inference-at-export-time.md
 [d-03]: ../decisions/D-03-data-duplication-over-normalization.md
@@ -113,3 +115,4 @@ documents why each was included.
 [d-07]: ../decisions/D-07-dual-body-md-and-html.md
 [d-08]: ../decisions/D-08-precomputed-thread-indexes.md
 [d-09]: ../decisions/D-09-per-pr-blob-scope.md
+[d-10]: ../decisions/D-10-context-files-same-package.md
