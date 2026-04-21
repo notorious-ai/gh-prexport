@@ -214,9 +214,18 @@ Resolve the 6 open implementation questions from reference/04-api-mapping.md.
 
 ### Step 5.1 — Formalize existing decisions (D-01..10)
 
-- 10 files from reference/05 decisions, each with: status, date, context,
-  decision, alternatives, consequences, references
-- `docs: formalize design decisions D-01 through D-10`
+- 10 files from reference/05 decisions, written in MADR format: YAML frontmatter
+  for `status` and `date` (and `superseded-by` when `status: superseded`), body
+  sections for context, considered options, decision outcome, consequences, and
+  more information. The format convention itself lives in
+  `docs/decisions/README.md`
+- Reference/05's H3 subsections stay intact — they are prior work and remain the
+  archive of record for the original decision phrasing. Each commit adds a
+  single "Formalized as [D-nn][d-nn]." line at the end of the matching
+  subsection and a ref-style link definition, so readers of reference/05 are
+  pointed at the canonical MADR file without losing the original body
+- One commit per decision, retargeting any committed citation of that decision
+  in the same commit
 
 ### Step 5.2 — New decisions from analysis (D-11..14)
 
@@ -272,6 +281,15 @@ separate commits per-need. N-11 was re-scoped during drafting from "archive
 integrity invariant" (which duplicated N-06) to "archive integrity check" (the
 verification capability that confirms N-06's invariant holds on an archive), as
 described in Step 2.2.
+
+**Phase 5.1**: Complete ahead of Phase 3. D-01 through D-10 landed as separate
+commits in MADR format after `docs/decisions/README.md` was established as the
+format spec. Reference/05's original subsections are left intact; each commit
+only appends a "Formalized as [D-nn][d-nn]." line pointing at its canonical file
+and retargets the citations in N-02, `reference/00-original-conversation.md`,
+and the glossary. The reordering was driven by committed SE artifacts already
+citing D-01..D-10; the decisions directory is no longer empty under
+`docs/README.md`'s reading order.
 
 **Phase 3**: Next. Pull in the reference docs (`reference/03` for schema,
 `reference/04` for API mapping, `reference/02` for storage layout) to derive the
